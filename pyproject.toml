@@ -51,6 +51,9 @@ dev = [
 
     # Versioning
     "bump-my-version",
+
+    # Workflow
+    "pre-commit",
 ]
 
 # Ruff

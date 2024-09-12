@@ -3,7 +3,6 @@
 During development you will also need:
 
 - `uv` installed as a system package.
-- pre-commit 3 _(Optional, but strongly recommended)_
 
 ## Local development
 
