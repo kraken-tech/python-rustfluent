@@ -5,6 +5,10 @@ A Python interface to the Rust Fluent Library.
 This project is a small shim around [fluent-rs](https://github.com/projectfluent/fluent-rs), so it
 can be used from Python.
 
+> [!WARNING]
+> This package is under active development, and breaking changes may be released at any time. Be sure to pin to
+> specific versions if you're using this package in a production environment.
+
 ## Prerequisites
 
 This package supports:
