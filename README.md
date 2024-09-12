@@ -1,6 +1,9 @@
 # rustfluent
 
-TODO describe the purpose of 'rustfluent' here.
+A Python interface to the Rust Fluent Library.
+
+This project is a small shim around [fluent-rs](https://github.com/projectfluent/fluent-rs), so it
+can be used from Python.
 
 ## Prerequisites
 
