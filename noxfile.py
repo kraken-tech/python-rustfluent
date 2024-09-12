@@ -18,7 +18,6 @@ nox.options.default_venv_backend = "uv"
 @nox.parametrize(
     "python",
     [
-        nox.param("3.10", id="python=3.10"),
         nox.param("3.11", id="python=3.11"),
         nox.param("3.12", id="python=3.12"),
     ],

@@ -23,7 +23,7 @@ where = ["src"]
 
 [project]
 name = "rustfluent"
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 
 # Do not manually edit the version, use `make version_{type}` instead.
 # This should match the version in the [tool.bumpversion] section.

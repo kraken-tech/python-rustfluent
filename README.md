@@ -13,7 +13,6 @@ can be used from Python.
 
 This package supports:
 
-- Python 3.10
 - Python 3.11
 - Python 3.12
 
