@@ -2,21 +2,8 @@
 # ---------
 
 [build-system]
-requires = ["setuptools>=67.0"]
-build-backend = "setuptools.build_meta"
-
-[tool.setuptools]
-# This is the default but we include it to be explicit.
-include-package-data = true
-
-[tool.setuptools.packages.find]
-where = ["src"]
-
-[tool.setuptools.package-data]
-# Include the root-package `py.typed` file so Mypy uses inline type annotations.
-"rustfluent" = [
-    "rustfluent/py.typed",
-]
+requires = ["maturin>=1.7,<2.0"]
+build-backend = "maturin"
 
 # Project
 # -------
@@ -24,7 +11,14 @@ where = ["src"]
 [project]
 name = "rustfluent"
 requires-python = ">=3.11"
-
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "License :: OSI Approved :: BSD License",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Rust",
+]
 # Do not manually edit the version, use `make version_{type}` instead.
 # This should match the version in the [tool.bumpversion] section.
 version = "0.1.0"
@@ -46,15 +40,16 @@ dev = [
     "ruff",
     "mypy",
 
-    # Packaging
-    "build",
-
     # Versioning
     "bump-my-version",
 
     # Workflow
     "pre-commit",
+    "maturin",
 ]
+
+[tool.maturin]
+features = ["pyo3/extension-module"]
 
 # Ruff
 # ----
