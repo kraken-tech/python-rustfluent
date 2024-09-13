@@ -176,14 +176,20 @@ make dev
 
 to sync your installed packages with the updated versions pinned in `requirements/development.txt`.
 
-## Versioning
+## How to release a new version to Pypi
 
-This project uses [SemVer] for versioning with no additional suffix after the version number. When
-it is time for a new release, run the command `make version_{type}` where `{type}` should be
-replaced with one of `major`, `minor`, `patch` depending on the type of changes in the release.
-
-The command will update the version in `pyproject.toml` and move the changes from the "Unreleased"
-section of the changelog to a versioned section and create a new "Unreleased" section for future
-improvements.
+1. On your branch, run the appropriate command, depending on which kind of release it is:
+   - either `make version_major`
+   - or `make version_minor`
+   - or `make version_patch`.
+2. Review the commit that has just been made (note it will have updated the version based on [SemVer]).
+3. Push the commit, get it reviewed and merge it to `main`.
+4. Once it's merged, tag the merge commit and push tags:
+   - `git checkout main && git pull`
+   - `git tag v0.0.0`
+   - `git push --tags`
+5. Keep an eye on the [release workflow] which should have started. Check that it completes, and the latest version has
+   made its way onto [Pypi](https://pypi.org/project/rustfluent/).
 
 [semver]: https://semver.org/
+[release workflow]: https://github.com/kraken-tech/python-rustfluent/actions/workflows/release.yml
