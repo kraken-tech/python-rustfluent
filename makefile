@@ -13,6 +13,7 @@ dev: install_python_packages .git/hooks/pre-commit
 
 .PHONY:test
 test:
+	cargo test
 	pytest
 
 .PHONY:matrix_test
@@ -20,11 +21,15 @@ matrix_test:
 	nox
 
 .PHONY:lint
-lint: ruff_format ruff_lint mypy
+lint: ruff_format ruff_lint cargo_format mypy
 
 .PHONY:ruff_format
 ruff_format:
 	ruff format --check .
+
+.PHONY:cargo_format
+cargo_format:
+	cargo fmt --check
 
 .PHONY:ruff_lint
 ruff_lint:
@@ -38,6 +43,7 @@ mypy:
 format:
 	ruff format .
 	ruff check --fix .
+	cargo fmt
 
 .PHONY:update
 update:
