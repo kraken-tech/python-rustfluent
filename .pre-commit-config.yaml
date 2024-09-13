@@ -37,3 +37,10 @@ repos:
         language: system
         types: [python]
         require_serial: true
+
+      - id: cargo-format
+        name: "check Rust formatting"
+        entry: "cargo fmt -- --check"
+        language: system
+        types: [ rust ]
+        require_serial: true
