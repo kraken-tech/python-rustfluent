@@ -14,8 +14,8 @@ where = ["src"]
 
 [tool.setuptools.package-data]
 # Include the root-package `py.typed` file so Mypy uses inline type annotations.
-"kraken.rustfluent" = [
-    "kraken/rustfluent/py.typed",
+"rustfluent" = [
+    "rustfluent/py.typed",
 ]
 
 # Project
@@ -23,7 +23,7 @@ where = ["src"]
 
 [project]
 name = "rustfluent"
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 
 # Do not manually edit the version, use `make version_{type}` instead.
 # This should match the version in the [tool.bumpversion] section.
@@ -51,6 +51,9 @@ dev = [
 
     # Versioning
     "bump-my-version",
+
+    # Workflow
+    "pre-commit",
 ]
 
 # Ruff
@@ -80,7 +83,6 @@ ignore = [
 "**/__init__.py" = [ "F401" ]
 
 [tool.ruff.lint.isort]
-known-first-party = ["kraken"]
 lines-after-imports = 2
 section-order = [
     "future",
@@ -93,7 +95,7 @@ section-order = [
 
 [tool.ruff.lint.isort.sections]
 "project" = [
-    "kraken.rustfluent",
+    "rustfluent",
     "tests",
 ]
 
@@ -103,10 +105,7 @@ section-order = [
 [tool.mypy]
 files = "."
 exclude = "build/"
-# Mypy doesn't understand how to handle namespace packages unless we run it with
-# the `explicit_package_bases` flag and specify where all the packages are
-# located. The "$MYPY_CONFIG_FILE_DIR/src" path allows Mypy to find the "kraken"
-# namespace package. The "$MYPY_CONFIG_FILE_DIR" path allows Mypy to find the
+# The "$MYPY_CONFIG_FILE_DIR" path allows Mypy to find the
 # "tests" package and noxfile.py.
 explicit_package_bases = true
 mypy_path = [
