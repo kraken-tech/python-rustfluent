@@ -1,8 +1,9 @@
 # Contributing
 
-During development you will also need:
+During development you will also need the following system packages installed:
 
-- `uv` installed as a system package.
+- [uv](https://astral.sh/blog/uv) - for Python packaging.
+- Cargo - for Rust development. (These can be installed using [rustup](https://www.rust-lang.org/tools/install)).
 
 ## Local development
 

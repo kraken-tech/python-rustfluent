@@ -13,6 +13,7 @@ dev: install_python_packages .git/hooks/pre-commit
 
 .PHONY:test
 test:
+	cargo test
 	pytest
 
 .PHONY:matrix_test
