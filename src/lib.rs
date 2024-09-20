@@ -34,7 +34,11 @@ impl Bundle {
 
             let res = match FluentResource::try_new(contents) {
                 Ok(res) => res,
-                Err(_) => return Err(PyValueError::new_err("Fluent file contains errors")),
+                Err(error) => {
+                    return Err(PyValueError::new_err(format!(
+                        "{error:?} - Fluent file contains errors"
+                    )))
+                }
             };
 
             bundle.add_resource_overriding(res);
