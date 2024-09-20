@@ -25,10 +25,10 @@ pip install rustfluent
 ## Usage
 
 ```python
-import rustfluent as fluent
+import rustfluent
 
 # First load a bundle
-bundle = fluent.Bundle(
+bundle = rustfluent.Bundle(
     "en",
     [
         # Multiple FTL files can be specified. Entries in later
