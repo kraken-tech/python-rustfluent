@@ -6,8 +6,6 @@ argcomplete==3.5.0
     # via nox
 bracex==2.5
     # via wcmatch
-build==1.2.2
-    # via rustfluent (pyproject.toml)
 bump-my-version==0.26.0
     # via rustfluent (pyproject.toml)
 cfgv==3.4.0
@@ -42,9 +40,10 @@ nox==2024.4.15
     # via rustfluent (pyproject.toml)
 packaging==24.1
     # via
-    #   build
     #   nox
     #   pytest
+pip==24.2
+    # via rustfluent (pyproject.toml)
 platformdirs==4.3.2
     # via virtualenv
 pluggy==1.5.0
@@ -63,8 +62,6 @@ pydantic-settings==2.5.2
     # via bump-my-version
 pygments==2.18.0
     # via rich
-pyproject-hooks==1.1.0
-    # via build
 pytest==8.3.3
     # via rustfluent (pyproject.toml)
 python-dotenv==1.0.1
