@@ -40,8 +40,8 @@ bundle = rustfluent.Bundle(
 # Fetch a translation
 assert bundle.get_translation("hello-world") == "Hello World"
 
-# Fetch a translation that takes a keyword argument
-assert bundle.get_translation("hello-user", user="Bob") == "Hello, \u2068Bob\u2069"
+# Fetch a translation that includes variables
+assert bundle.get_translation("hello-user", variables={"user": "Bob"}) == "Hello, \u2068Bob\u2069"
 ```
 
 The Unicode characters around "Bob" in the above example are for

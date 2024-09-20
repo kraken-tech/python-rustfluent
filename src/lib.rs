@@ -47,11 +47,11 @@ impl Bundle {
         Ok(Self { bundle })
     }
 
-    #[pyo3(signature = (identifier, **kwargs))]
+    #[pyo3(signature = (identifier, variables=None))]
     pub fn get_translation(
         &self,
         identifier: &str,
-        kwargs: Option<&Bound<'_, PyDict>>,
+        variables: Option<&Bound<'_, PyDict>>,
     ) -> PyResult<String> {
         let msg = match self.bundle.get_message(identifier) {
             Some(m) => m,
@@ -71,9 +71,9 @@ impl Bundle {
 
         let mut args = FluentArgs::new();
 
-        if let Some(kwargs) = kwargs {
-            for kwarg in kwargs {
-                args.set(kwarg.0.to_string(), kwarg.1.to_string());
+        if let Some(variables) = variables {
+            for variable in variables {
+                args.set(variable.0.to_string(), variable.1.to_string());
             }
         }
 
