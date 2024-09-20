@@ -15,6 +15,14 @@ def test_en_basic():
     assert bundle.get_translation("hello-world") == "Hello World"
 
 
+def test_en_basic_with_named_arguments():
+    bundle = fluent.Bundle(
+        language="en",
+        ftl_filenames=[str(data_dir / "en.ftl")],
+    )
+    assert bundle.get_translation("hello-world") == "Hello World"
+
+
 def test_en_with_args():
     bundle = fluent.Bundle("en", [str(data_dir / "en.ftl")])
     assert bundle.get_translation("hello-user", user="Bob") == "Hello, \u2068Bob\u2069"

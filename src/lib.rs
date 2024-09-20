@@ -21,9 +21,9 @@ struct Bundle {
 #[pymethods]
 impl Bundle {
     #[new]
-    fn new(namespace: &str, ftl_filenames: &'_ Bound<'_, PyList>) -> PyResult<Self> {
-        let langid_en: LanguageIdentifier = namespace.parse().expect("Parsing failed");
-        let mut bundle = FluentBundle::new_concurrent(vec![langid_en]);
+    fn new(language: &str, ftl_filenames: &'_ Bound<'_, PyList>) -> PyResult<Self> {
+        let langid: LanguageIdentifier = language.parse().expect("Parsing failed");
+        let mut bundle = FluentBundle::new_concurrent(vec![langid]);
 
         for file_path in ftl_filenames.iter() {
             let path_string = file_path.to_string();
