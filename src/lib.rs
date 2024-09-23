@@ -7,9 +7,14 @@ use pyo3::types::{PyDict, PyList};
 use std::fs;
 use unic_langid::LanguageIdentifier;
 
+use pyo3::create_exception;
+
+create_exception!(rustfluent, PyParserError, pyo3::exceptions::PyException);
+
 #[pymodule]
 fn rustfluent(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<Bundle>()?;
+    m.add("ParserError", m.py().get_type_bound::<PyParserError>())?;
     Ok(())
 }
 
@@ -21,7 +26,8 @@ struct Bundle {
 #[pymethods]
 impl Bundle {
     #[new]
-    fn new(language: &str, ftl_filenames: &'_ Bound<'_, PyList>) -> PyResult<Self> {
+    #[pyo3(signature = (language, ftl_filenames, strict=false))]
+    fn new(language: &str, ftl_filenames: &'_ Bound<'_, PyList>, strict: bool) -> PyResult<Self> {
         let langid: LanguageIdentifier = language.parse().expect("Parsing failed");
         let mut bundle = FluentBundle::new_concurrent(vec![langid]);
 
@@ -32,16 +38,22 @@ impl Bundle {
                 Err(_) => return Err(PyFileNotFoundError::new_err(file_path.to_string())),
             };
 
-            let res = match FluentResource::try_new(contents) {
-                Ok(res) => res,
+            let resource = match FluentResource::try_new(contents) {
+                Ok(resource) => resource,
                 Err(error) => {
-                    return Err(PyValueError::new_err(format!(
-                        "{error:?} - Fluent file contains errors"
-                    )))
+                    if strict {
+                        return Err(PyParserError::new_err(format!(
+                            "Error when parsing {}.",
+                            file_path
+                        )));
+                    } else {
+                        // The first element of the error is the parsed resource, minus any
+                        // invalid messages.
+                        error.0
+                    }
                 }
             };
-
-            bundle.add_resource_overriding(res);
+            bundle.add_resource_overriding(resource);
         }
 
         Ok(Self { bundle })

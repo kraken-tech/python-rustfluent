@@ -1,6 +1,6 @@
 #!/usr/bin/env python
-
 import pathlib
+import re
 
 import pytest
 
@@ -66,6 +66,19 @@ def test_file_not_found():
         fluent.Bundle("fr", [str(data_dir / "none.ftl")])
 
 
-def test_file_has_errors():
-    with pytest.raises(ValueError):
-        fluent.Bundle("fr", [str(data_dir / "errors.ftl")])
+@pytest.mark.parametrize("pass_strict_argument_explicitly", (True, False))
+def test_parses_other_parts_of_file_that_contains_errors_in_non_strict_mode(
+    pass_strict_argument_explicitly,
+):
+    kwargs = dict(strict=False) if pass_strict_argument_explicitly else {}
+
+    bundle = fluent.Bundle("fr", [str(data_dir / "errors.ftl")], **kwargs)
+    translation = bundle.get_translation("valid-message")
+
+    assert translation == "I'm valid."
+
+
+def test_raises_parser_error_on_file_that_contains_errors_in_strict_mode():
+    filename = str(data_dir / "errors.ftl")
+    with pytest.raises(fluent.ParserError, match=re.escape(f"Error when parsing {filename}.")):
+        fluent.Bundle("fr", [filename], strict=True)
