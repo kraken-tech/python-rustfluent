@@ -1,6 +1,6 @@
 #!/usr/bin/env python
-
 import pathlib
+import re
 
 import pytest
 
@@ -78,6 +78,7 @@ def test_parses_other_parts_of_file_that_contains_errors_in_non_strict_mode(
     assert translation == "I'm valid."
 
 
-def test_raises_value_error_on_file_that_contains_errors_in_strict_mode():
-    with pytest.raises(ValueError):
-        fluent.Bundle("fr", [str(data_dir / "errors.ftl")], strict=True)
+def test_raises_parser_error_on_file_that_contains_errors_in_strict_mode():
+    filename = str(data_dir / "errors.ftl")
+    with pytest.raises(fluent.ParserError, match=re.escape(f"Error when parsing {filename}.")):
+        fluent.Bundle("fr", [filename], strict=True)
