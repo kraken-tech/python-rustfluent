@@ -21,7 +21,8 @@ struct Bundle {
 #[pymethods]
 impl Bundle {
     #[new]
-    fn new(language: &str, ftl_filenames: &'_ Bound<'_, PyList>) -> PyResult<Self> {
+    #[pyo3(signature = (language, ftl_filenames, strict=false))]
+    fn new(language: &str, ftl_filenames: &'_ Bound<'_, PyList>, strict: bool) -> PyResult<Self> {
         let langid: LanguageIdentifier = language.parse().expect("Parsing failed");
         let mut bundle = FluentBundle::new_concurrent(vec![langid]);
 
@@ -32,16 +33,21 @@ impl Bundle {
                 Err(_) => return Err(PyFileNotFoundError::new_err(file_path.to_string())),
             };
 
-            let res = match FluentResource::try_new(contents) {
-                Ok(res) => res,
+            let resource = match FluentResource::try_new(contents) {
+                Ok(resource) => resource,
                 Err(error) => {
-                    return Err(PyValueError::new_err(format!(
-                        "{error:?} - Fluent file contains errors"
-                    )))
+                    if strict {
+                        return Err(PyValueError::new_err(format!(
+                            "{error:?} - Fluent file contains errors"
+                        )));
+                    } else {
+                        // The first element of the error is the parsed resource, minus any
+                        // invalid messages.
+                        error.0
+                    }
                 }
             };
-
-            bundle.add_resource_overriding(res);
+            bundle.add_resource_overriding(resource);
         }
 
         Ok(Self { bundle })

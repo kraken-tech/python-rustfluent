@@ -67,15 +67,16 @@ bundle = rustfluent.Bundle(
 
 #### Parameters
 
-| Name        | Type        | Description                                                                                                             |
-|-------------|-------------|-------------------------------------------------------------------------------------------------------------------------|
-| `language`  | `str`       | [Unicode Language Identifier](https://unicode.org/reports/tr35/tr35.html#Unicode_language_identifier) for the language. |
-| `ftl_files` | `list[str]` | Full paths to the FTL files containing the translations. Entries in later files overwrite earlier ones.                 |
+| Name        | Type             | Description                                                                                                                                                      |
+|-------------|------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `language`  | `str`            | [Unicode Language Identifier](https://unicode.org/reports/tr35/tr35.html#Unicode_language_identifier) for the language.                                          |
+| `ftl_files` | `list[str]`      | Full paths to the FTL files containing the translations. Entries in later files overwrite earlier ones.                                                          |
+| `strict`    | `bool`, optional | In strict mode, a `ValueError` will be raised if there are any errors in the file. In non-strict mode, invalid Fluent messages will be excluded from the Bundle. |
 
 #### Raises
 
 - `FileNotFoundError` if any of the FTL files could not be found.
-- `ValueError` if any of the FTL files contain errors.
+- `ValueError` if any of the FTL files contain errors (strict mode only).
 
 ### `Bundle.get_translation`
 

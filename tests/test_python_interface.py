@@ -66,6 +66,18 @@ def test_file_not_found():
         fluent.Bundle("fr", [str(data_dir / "none.ftl")])
 
 
-def test_file_has_errors():
+@pytest.mark.parametrize("pass_strict_argument_explicitly", (True, False))
+def test_parses_other_parts_of_file_that_contains_errors_in_non_strict_mode(
+    pass_strict_argument_explicitly,
+):
+    kwargs = dict(strict=False) if pass_strict_argument_explicitly else {}
+
+    bundle = fluent.Bundle("fr", [str(data_dir / "errors.ftl")], **kwargs)
+    translation = bundle.get_translation("valid-message")
+
+    assert translation == "I'm valid."
+
+
+def test_raises_value_error_on_file_that_contains_errors_in_strict_mode():
     with pytest.raises(ValueError):
-        fluent.Bundle("fr", [str(data_dir / "errors.ftl")])
+        fluent.Bundle("fr", [str(data_dir / "errors.ftl")], strict=True)
