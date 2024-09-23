@@ -25,10 +25,10 @@ pip install rustfluent
 ## Usage
 
 ```python
-import rustfluent as fluent
+import rustfluent
 
 # First load a bundle
-bundle = fluent.Bundle(
+bundle = rustfluent.Bundle(
     "en",
     [
         # Multiple FTL files can be specified. Entries in later
@@ -40,12 +40,66 @@ bundle = fluent.Bundle(
 # Fetch a translation
 assert bundle.get_translation("hello-world") == "Hello World"
 
-# Fetch a translation that takes a keyword argument
-assert bundle.get_translation("hello-user", user="Bob") == "Hello, \u2068Bob\u2069"
+# Fetch a translation that includes variables
+assert bundle.get_translation("hello-user", variables={"user": "Bob"}) == "Hello, \u2068Bob\u2069"
 ```
 
 The Unicode characters around "Bob" in the above example are for
 [Unicode bidirectional handling](https://www.unicode.org/reports/tr9/).
+
+## API reference
+
+### `Bundle` class
+
+A set of translations for a specific language.
+
+```python
+import rustfluent
+
+bundle = rustfluent.Bundle(
+    language="en-US",
+    ftl_files=[
+        "/path/to/messages.ftl",
+        "/path/to/more/messages.ftl",
+    ],
+)
+```
+
+#### Parameters
+
+| Name        | Type        | Description                                                                                                             |
+|-------------|-------------|-------------------------------------------------------------------------------------------------------------------------|
+| `language`  | `str`       | [Unicode Language Identifier](https://unicode.org/reports/tr35/tr35.html#Unicode_language_identifier) for the language. |
+| `ftl_files` | `list[str]` | Full paths to the FTL files containing the translations. Entries in later files overwrite earlier ones.                 |
+
+#### Raises
+
+- `FileNotFoundError` if any of the FTL files could not be found.
+- `ValueError` if any of the FTL files contain errors.
+
+### `Bundle.get_translation`
+
+```
+>>> bundle.get_translation(identifier="hello-world")
+"Hello, world!"
+>>> bundle.get_translation(identifier="hello-user", variables={"user": "Bob"})
+"Hello, Bob!"
+```
+
+#### Parameters
+
+| Name         | Type                       | Description                                                                                                |
+|--------------|----------------------------|------------------------------------------------------------------------------------------------------------|
+| `identifier` | `str`                      | The identifier for the Fluent message.                                                                     |
+| `variables`  | `dict[str, str]`, optional | Any [variables](https://projectfluent.org/fluent/guide/variables.html) to be passed to the Fluent message. |
+
+#### Return value
+
+`str`: the translated message.
+
+#### Raises
+
+- `ValueError` if the message could not be found or has no translation available.
 
 ## Contributing
 

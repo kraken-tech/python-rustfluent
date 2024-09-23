@@ -47,10 +47,21 @@ This will set up your local development environment, installing all development 
 
 ### Testing (single Python version)
 
-To run the test suite using the Python version of your virtual environment, run:
+Run all Rust and Python tests (within your specific virtual environment) using this command:
 
 ```sh
 make test
+```
+
+This will recompile the Rust code (if necessary) before running the tests.
+
+#### Using pytest directly
+
+You can also run tests using pytest directly (e.g. via your IDE), but you will need to recompile the Rust code after
+any changes, otherwise they won't get picked up. You can recompile by running:
+
+```sh
+maturin develop
 ```
 
 ### Testing (all supported Python versions)

@@ -14,6 +14,7 @@ dev: install_python_packages .git/hooks/pre-commit
 .PHONY:test
 test:
 	cargo test
+	maturin develop
 	pytest
 
 .PHONY:matrix_test

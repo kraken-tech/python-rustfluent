@@ -21,9 +21,9 @@ struct Bundle {
 #[pymethods]
 impl Bundle {
     #[new]
-    fn new(namespace: &str, ftl_filenames: &'_ Bound<'_, PyList>) -> PyResult<Self> {
-        let langid_en: LanguageIdentifier = namespace.parse().expect("Parsing failed");
-        let mut bundle = FluentBundle::new_concurrent(vec![langid_en]);
+    fn new(language: &str, ftl_filenames: &'_ Bound<'_, PyList>) -> PyResult<Self> {
+        let langid: LanguageIdentifier = language.parse().expect("Parsing failed");
+        let mut bundle = FluentBundle::new_concurrent(vec![langid]);
 
         for file_path in ftl_filenames.iter() {
             let path_string = file_path.to_string();
@@ -47,11 +47,11 @@ impl Bundle {
         Ok(Self { bundle })
     }
 
-    #[pyo3(signature = (identifier, **kwargs))]
+    #[pyo3(signature = (identifier, variables=None))]
     pub fn get_translation(
         &self,
         identifier: &str,
-        kwargs: Option<&Bound<'_, PyDict>>,
+        variables: Option<&Bound<'_, PyDict>>,
     ) -> PyResult<String> {
         let msg = match self.bundle.get_message(identifier) {
             Some(m) => m,
@@ -71,9 +71,9 @@ impl Bundle {
 
         let mut args = FluentArgs::new();
 
-        if let Some(kwargs) = kwargs {
-            for kwarg in kwargs {
-                args.set(kwarg.0.to_string(), kwarg.1.to_string());
+        if let Some(variables) = variables {
+            for variable in variables {
+                args.set(variable.0.to_string(), variable.1.to_string());
             }
         }
 
