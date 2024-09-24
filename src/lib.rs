@@ -109,7 +109,7 @@ impl Bundle {
         }
         let value = self
             .bundle
-            .format_pattern(&pattern, Some(&args), &mut errors);
+            .format_pattern(pattern, Some(&args), &mut errors);
         Ok(value.to_string())
     }
 }
