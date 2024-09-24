@@ -43,6 +43,24 @@ def test_fr_with_args():
     )
 
 
+@pytest.mark.parametrize(
+    "number, expected",
+    (
+        pytest.param(1, "One", marks=pytest.mark.xfail),
+        (2, "Something else"),
+        # Note that for selection to work, the variable must be an integer.
+        # So "1" is not equivalent to 1.
+        ("1", "Something else"),
+    ),
+)
+def test_selector(number, expected):
+    bundle = fluent.Bundle("en", [str(data_dir / "en.ftl")])
+
+    result = bundle.get_translation("with-selector", variables={"number": number})
+
+    assert result == expected
+
+
 def test_new_overwrites_old():
     bundle = fluent.Bundle(
         "en",
