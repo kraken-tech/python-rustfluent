@@ -9,6 +9,10 @@ import rustfluent as fluent
 
 data_dir = pathlib.Path(__file__).parent.resolve() / "data"
 
+# Bidirectional markers.
+# See https://unicode.org/reports/tr9/#Directional_Formatting_Characters
+BIDI_OPEN, BIDI_CLOSE = "\u2068", "\u2069"
+
 
 def test_en_basic():
     bundle = fluent.Bundle("en", [str(data_dir / "en.ftl")])
@@ -26,7 +30,8 @@ def test_en_basic_with_named_arguments():
 def test_en_with_args():
     bundle = fluent.Bundle("en", [str(data_dir / "en.ftl")])
     assert (
-        bundle.get_translation("hello-user", variables={"user": "Bob"}) == "Hello, \u2068Bob\u2069"
+        bundle.get_translation("hello-user", variables={"user": "Bob"})
+        == f"Hello, {BIDI_OPEN}Bob{BIDI_CLOSE}"
     )
 
 
@@ -39,7 +44,7 @@ def test_fr_with_args():
     bundle = fluent.Bundle("fr", [str(data_dir / "fr.ftl")])
     assert (
         bundle.get_translation("hello-user", variables={"user": "Bob"})
-        == "Bonjour, \u2068Bob\u2069!"
+        == f"Bonjour, {BIDI_OPEN}Bob{BIDI_CLOSE}!"
     )
 
 
@@ -69,7 +74,7 @@ def test_new_overwrites_old():
     assert bundle.get_translation("hello-world") == "Hello World"
     assert (
         bundle.get_translation("hello-user", variables={"user": "Bob"})
-        == "Bonjour, \u2068Bob\u2069!"
+        == f"Bonjour, {BIDI_OPEN}Bob{BIDI_CLOSE}!"
     )
 
 
