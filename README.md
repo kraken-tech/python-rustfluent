@@ -89,10 +89,10 @@ bundle = rustfluent.Bundle(
 
 #### Parameters
 
-| Name         | Type                       | Description                                                                                                |
-|--------------|----------------------------|------------------------------------------------------------------------------------------------------------|
-| `identifier` | `str`                      | The identifier for the Fluent message.                                                                     |
-| `variables`  | `dict[str, str]`, optional | Any [variables](https://projectfluent.org/fluent/guide/variables.html) to be passed to the Fluent message. |
+| Name         | Type                         | Description                            |
+|--------------|------------------------------|----------------------------------------|
+| `identifier` | `str`                        | The identifier for the Fluent message. |
+| `variables`  | `dict[str, str | int ]`, optional                  | Any [variables](https://projectfluent.org/fluent/guide/variables.html) to be passed to the Fluent message. |
 
 #### Return value
 
@@ -101,6 +101,8 @@ bundle = rustfluent.Bundle(
 #### Raises
 
 - `ValueError` if the message could not be found or has no translation available.
+- `TypeError` if a passed variable is not an instance of `str` or `int`, or if the `int` overflows a signed long
+  integer (i.e. it's not in the range -2,147,483,648 to 2,147,483,647).
 
 ## Contributing
 

@@ -50,6 +50,26 @@ def test_variables_of_different_types(description, identifier, variables, expect
     assert result == expected
 
 
+def test_large_python_integers_fail_sensibly():
+    bundle = fluent.Bundle("en", [str(data_dir / "en.ftl")])
+
+    with pytest.raises(
+        TypeError, match=re.escape("Integer variable was too large: 1000000000000.")
+    ):
+        bundle.get_translation(
+            "hello-user",
+            variables={"user": 1_000_000_000_000},
+        )
+
+
+@pytest.mark.parametrize("user", (object(), 34.3))
+def test_invalid_type_raises_type_error(user):
+    bundle = fluent.Bundle("en", [str(data_dir / "en.ftl")])
+
+    with pytest.raises(TypeError):
+        bundle.get_translation("hello-user", variables={"user": user})
+
+
 def test_fr_basic():
     bundle = fluent.Bundle("fr", [str(data_dir / "fr.ftl")])
     assert bundle.get_translation("hello-world") == "Bonjour le monde!"
@@ -66,7 +86,7 @@ def test_fr_with_args():
 @pytest.mark.parametrize(
     "number, expected",
     (
-        pytest.param(1, "One", marks=pytest.mark.xfail),
+        (1, "One"),
         (2, "Something else"),
         # Note that for selection to work, the variable must be an integer.
         # So "1" is not equivalent to 1.
