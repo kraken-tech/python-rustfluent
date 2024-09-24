@@ -35,6 +35,21 @@ def test_en_with_args():
     )
 
 
+@pytest.mark.parametrize(
+    "description, identifier, variables, expected",
+    (
+        ("String", "hello-user", {"user": "Bob"}, f"Hello, {BIDI_OPEN}Bob{BIDI_CLOSE}"),
+        ("Integer", "apples", {"numberOfApples": 10}, f"{BIDI_OPEN}10{BIDI_CLOSE} apples"),
+    ),
+)
+def test_variables_of_different_types(description, identifier, variables, expected):
+    bundle = fluent.Bundle("en", [str(data_dir / "en.ftl")])
+
+    result = bundle.get_translation(identifier, variables=variables)
+
+    assert result == expected
+
+
 def test_fr_basic():
     bundle = fluent.Bundle("fr", [str(data_dir / "fr.ftl")])
     assert bundle.get_translation("hello-world") == "Bonjour le monde!"
