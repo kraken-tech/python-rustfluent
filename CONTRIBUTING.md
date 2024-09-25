@@ -189,17 +189,20 @@ to sync your installed packages with the updated versions pinned in `requirement
 
 ## How to release a new version to Pypi
 
-1. On your branch, run the appropriate command, depending on which kind of release it is:
+1. Create a new branch off the `main` branch.
+2. Double check that the `Unreleased` section of CHANGELOG.md is up to date. If it isn't, add a short summary
+   of changes.
+3. Run the appropriate command, depending on which kind of release it is:
    - either `make version_major`
    - or `make version_minor`
    - or `make version_patch`.
-2. Review the commit that has just been made (note it will have updated the version based on [SemVer]).
-3. Push the commit, get it reviewed and merge it to `main`.
-4. Once it's merged, tag the merge commit and push tags:
+4. Review the commit that has just been made (note it will have updated the version based on [SemVer]).
+5. Push the commit, get it reviewed and merge it to `main`.
+6. Once it's merged, tag the merge commit and push tags:
    - `git checkout main && git pull`
-   - `git tag v0.0.0`
+   - `git tag YOUR_VERSION` (In the form `v0.0.0`.)
    - `git push --tags`
-5. Keep an eye on the [release workflow] which should have started. Check that it completes, and the latest version has
+7. Keep an eye on the [release workflow] which should have started. Check that it completes, and the latest version has
    made its way onto [Pypi](https://pypi.org/project/rustfluent/).
 
 [semver]: https://semver.org/
