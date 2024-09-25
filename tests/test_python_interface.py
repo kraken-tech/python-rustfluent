@@ -9,6 +9,10 @@ import rustfluent as fluent
 
 data_dir = pathlib.Path(__file__).parent.resolve() / "data"
 
+# Bidirectional markers.
+# See https://unicode.org/reports/tr9/#Directional_Formatting_Characters
+BIDI_OPEN, BIDI_CLOSE = "\u2068", "\u2069"
+
 
 def test_en_basic():
     bundle = fluent.Bundle("en", [str(data_dir / "en.ftl")])
@@ -26,8 +30,44 @@ def test_en_basic_with_named_arguments():
 def test_en_with_args():
     bundle = fluent.Bundle("en", [str(data_dir / "en.ftl")])
     assert (
-        bundle.get_translation("hello-user", variables={"user": "Bob"}) == "Hello, \u2068Bob\u2069"
+        bundle.get_translation("hello-user", variables={"user": "Bob"})
+        == f"Hello, {BIDI_OPEN}Bob{BIDI_CLOSE}"
     )
+
+
+@pytest.mark.parametrize(
+    "description, identifier, variables, expected",
+    (
+        ("String", "hello-user", {"user": "Bob"}, f"Hello, {BIDI_OPEN}Bob{BIDI_CLOSE}"),
+        ("Integer", "apples", {"numberOfApples": 10}, f"{BIDI_OPEN}10{BIDI_CLOSE} apples"),
+    ),
+)
+def test_variables_of_different_types(description, identifier, variables, expected):
+    bundle = fluent.Bundle("en", [str(data_dir / "en.ftl")])
+
+    result = bundle.get_translation(identifier, variables=variables)
+
+    assert result == expected
+
+
+def test_large_python_integers_fail_sensibly():
+    bundle = fluent.Bundle("en", [str(data_dir / "en.ftl")])
+
+    with pytest.raises(
+        TypeError, match=re.escape("Integer variable was too large: 1000000000000.")
+    ):
+        bundle.get_translation(
+            "hello-user",
+            variables={"user": 1_000_000_000_000},
+        )
+
+
+@pytest.mark.parametrize("user", (object(), 34.3))
+def test_invalid_type_raises_type_error(user):
+    bundle = fluent.Bundle("en", [str(data_dir / "en.ftl")])
+
+    with pytest.raises(TypeError):
+        bundle.get_translation("hello-user", variables={"user": user})
 
 
 def test_fr_basic():
@@ -39,8 +79,26 @@ def test_fr_with_args():
     bundle = fluent.Bundle("fr", [str(data_dir / "fr.ftl")])
     assert (
         bundle.get_translation("hello-user", variables={"user": "Bob"})
-        == "Bonjour, \u2068Bob\u2069!"
+        == f"Bonjour, {BIDI_OPEN}Bob{BIDI_CLOSE}!"
     )
+
+
+@pytest.mark.parametrize(
+    "number, expected",
+    (
+        (1, "One"),
+        (2, "Something else"),
+        # Note that for selection to work, the variable must be an integer.
+        # So "1" is not equivalent to 1.
+        ("1", "Something else"),
+    ),
+)
+def test_selector(number, expected):
+    bundle = fluent.Bundle("en", [str(data_dir / "en.ftl")])
+
+    result = bundle.get_translation("with-selector", variables={"number": number})
+
+    assert result == expected
 
 
 def test_new_overwrites_old():
@@ -51,7 +109,7 @@ def test_new_overwrites_old():
     assert bundle.get_translation("hello-world") == "Hello World"
     assert (
         bundle.get_translation("hello-user", variables={"user": "Bob"})
-        == "Bonjour, \u2068Bob\u2069!"
+        == f"Bonjour, {BIDI_OPEN}Bob{BIDI_CLOSE}!"
     )
 
 
