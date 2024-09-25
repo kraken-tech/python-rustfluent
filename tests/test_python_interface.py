@@ -65,24 +65,19 @@ def test_invalid_variable_keys_raise_type_error(key):
         bundle.get_translation("hello-user", variables={key: "Bob"})
 
 
-def test_large_python_integers_fail_sensibly():
-    bundle = fluent.Bundle("en", [str(data_dir / "en.ftl")])
-
-    with pytest.raises(
-        TypeError, match=re.escape("Integer variable was too large: 1000000000000.")
-    ):
-        bundle.get_translation(
-            "hello-user",
-            variables={"user": 1_000_000_000_000},
-        )
-
-
-@pytest.mark.parametrize("user", (object(), 34.3))
-def test_invalid_type_raises_type_error(user):
+@pytest.mark.parametrize(
+    "value",
+    (
+        object(),
+        34.3,
+        1_000_000_000_000,  # Larger than signed long integer.
+    ),
+)
+def test_invalid_variable_values_raise_type_error(value):
     bundle = fluent.Bundle("en", [str(data_dir / "en.ftl")])
 
     with pytest.raises(TypeError):
-        bundle.get_translation("hello-user", variables={"user": user})
+        bundle.get_translation("hello-user", variables={"user": value})
 
 
 def test_fr_basic():
