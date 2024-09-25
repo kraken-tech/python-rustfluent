@@ -26,21 +26,21 @@ repos:
     hooks:
       - id: ruff-lint
         name: "lint Python code with ruff"
-        entry: "ruff check"
+        entry: "ruff check --fix"
         language: system
         types: [python]
         require_serial: true
 
       - id: ruff-format
         name: "check Python formatting with ruff"
-        entry: "ruff format --check"
+        entry: "ruff format"
         language: system
         types: [python]
         require_serial: true
 
       - id: cargo-format
         name: "check Rust formatting"
-        entry: "cargo fmt -- --check"
+        entry: "cargo fmt --"
         language: system
         types: [ rust ]
         require_serial: true

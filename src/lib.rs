@@ -85,25 +85,38 @@ impl Bundle {
 
         if let Some(variables) = variables {
             for variable in variables {
-                let key: String = variable.0.to_string();
+                // Make sure the variable key is a Python string,
+                // raising a TypeError if not.
+                let python_key = variable.0;
+                if !python_key.is_instance_of::<PyString>() {
+                    return Err(PyTypeError::new_err(format!(
+                        "Variable key not a str, got {}.",
+                        python_key
+                    )));
+                }
+                let key = python_key.to_string();
+                // Set the variable value as a string or integer,
+                // raising a TypeError if not.
                 let python_value = variable.1;
                 if python_value.is_instance_of::<PyString>() {
                     args.set(key, python_value.to_string());
                 } else if python_value.is_instance_of::<PyInt>() {
-                    let int_value: i32 = match python_value.extract() {
-                        Ok(value) => value,
-                        _ => {
-                            return Err(PyTypeError::new_err(format!(
-                                "Integer variable was too large: {}.",
-                                python_value
-                            )));
+                    match python_value.extract::<i32>() {
+                        Ok(int_value) => {
+                            args.set(key, int_value);
                         }
-                    };
-                    args.set(key, int_value);
+                        _ => {
+                            // The Python integer overflowed i32.
+                            // Fall back to displaying the variable key as its value.
+                            let fallback_value = key.clone();
+                            args.set(key, fallback_value);
+                        }
+                    }
                 } else {
-                    return Err(PyTypeError::new_err(
-                        "Expected a string, integer or float.".to_string(),
-                    ));
+                    // The variable value was of an unsupported type.
+                    // Fall back to displaying the variable key as its value.
+                    let fallback_value = key.clone();
+                    args.set(key, fallback_value);
                 }
             }
         }

@@ -50,24 +50,35 @@ def test_variables_of_different_types(description, identifier, variables, expect
     assert result == expected
 
 
-def test_large_python_integers_fail_sensibly():
+@pytest.mark.parametrize(
+    "key",
+    (
+        object(),
+        34.3,
+        10,
+    ),
+)
+def test_invalid_variable_keys_raise_type_error(key):
     bundle = fluent.Bundle("en", [str(data_dir / "en.ftl")])
 
-    with pytest.raises(
-        TypeError, match=re.escape("Integer variable was too large: 1000000000000.")
-    ):
-        bundle.get_translation(
-            "hello-user",
-            variables={"user": 1_000_000_000_000},
-        )
+    with pytest.raises(TypeError, match="Variable key not a str, got"):
+        bundle.get_translation("hello-user", variables={key: "Bob"})
 
 
-@pytest.mark.parametrize("user", (object(), 34.3))
-def test_invalid_type_raises_type_error(user):
+@pytest.mark.parametrize(
+    "value",
+    (
+        object(),
+        34.3,
+        1_000_000_000_000,  # Larger than signed long integer.
+    ),
+)
+def test_invalid_variable_values_use_key_instead(value):
     bundle = fluent.Bundle("en", [str(data_dir / "en.ftl")])
 
-    with pytest.raises(TypeError):
-        bundle.get_translation("hello-user", variables={"user": user})
+    result = bundle.get_translation("hello-user", variables={"user": value})
+
+    assert result == f"Hello, {BIDI_OPEN}user{BIDI_CLOSE}"
 
 
 def test_fr_basic():
