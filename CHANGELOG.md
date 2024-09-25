@@ -7,6 +7,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.1.0a4] - 2024-09-25
+
 - Raise TypeError if variable key is not a string.
 - Fall back to displaying variable name if there is a type issue with a variable.
 
