@@ -73,11 +73,12 @@ def test_invalid_variable_keys_raise_type_error(key):
         1_000_000_000_000,  # Larger than signed long integer.
     ),
 )
-def test_invalid_variable_values_raise_type_error(value):
+def test_invalid_variable_values_use_key_instead(value):
     bundle = fluent.Bundle("en", [str(data_dir / "en.ftl")])
 
-    with pytest.raises(TypeError):
-        bundle.get_translation("hello-user", variables={"user": value})
+    result = bundle.get_translation("hello-user", variables={"user": value})
+
+    assert result == f"Hello, {BIDI_OPEN}user{BIDI_CLOSE}"
 
 
 def test_fr_basic():

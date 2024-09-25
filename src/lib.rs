@@ -101,20 +101,22 @@ impl Bundle {
                 if python_value.is_instance_of::<PyString>() {
                     args.set(key, python_value.to_string());
                 } else if python_value.is_instance_of::<PyInt>() {
-                    let int_value: i32 = match python_value.extract() {
-                        Ok(value) => value,
-                        _ => {
-                            return Err(PyTypeError::new_err(format!(
-                                "Integer variable was too large: {}.",
-                                python_value
-                            )));
+                    match python_value.extract::<i32>() {
+                        Ok(int_value) => {
+                            args.set(key, int_value);
                         }
-                    };
-                    args.set(key, int_value);
+                        _ => {
+                            // The Python integer overflowed i32.
+                            // Fall back to displaying the variable key as its value.
+                            let fallback_value = key.clone();
+                            args.set(key, fallback_value);
+                        }
+                    }
                 } else {
-                    return Err(PyTypeError::new_err(
-                        "Expected a string, integer or float.".to_string(),
-                    ));
+                    // The variable value was of an unsupported type.
+                    // Fall back to displaying the variable key as its value.
+                    let fallback_value = key.clone();
+                    args.set(key, fallback_value);
                 }
             }
         }

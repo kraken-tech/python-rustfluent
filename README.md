@@ -98,13 +98,13 @@ bundle = rustfluent.Bundle(
 
 `str`: the translated message.
 
+If there is a problem with a passed variable (e.g. it is of the wrong type or an integer that is larger than a
+signed long integer), then the name of the variable will be used instead.
+
 #### Raises
 
 - `ValueError` if the message could not be found or has no translation available.
-- `TypeError` if:
-  - a passed variable name (i.e. a key in the `variables` dict) is not a string.
-  - a passed variable (i.e. a value in the `variables` dict) is not an instance of `str` or `int`.
-  - a passed `int` variable overflows a signed long integer (i.e. it's not in the range -2,147,483,648 to 2,147,483,647).
+- `TypeError` if a passed variable name (i.e. a key in the `variables` dict) is not a string.
 
 ## Contributing
 
