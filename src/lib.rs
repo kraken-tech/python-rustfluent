@@ -85,7 +85,18 @@ impl Bundle {
 
         if let Some(variables) = variables {
             for variable in variables {
-                let key: String = variable.0.to_string();
+                // Make sure the variable key is a Python string,
+                // raising a TypeError if not.
+                let python_key = variable.0;
+                if !python_key.is_instance_of::<PyString>() {
+                    return Err(PyTypeError::new_err(format!(
+                        "Variable key not a str, got {}.",
+                        python_key
+                    )));
+                }
+                let key = python_key.to_string();
+                // Set the variable value as a string or integer,
+                // raising a TypeError if not.
                 let python_value = variable.1;
                 if python_value.is_instance_of::<PyString>() {
                     args.set(key, python_value.to_string());

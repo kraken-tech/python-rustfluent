@@ -50,6 +50,21 @@ def test_variables_of_different_types(description, identifier, variables, expect
     assert result == expected
 
 
+@pytest.mark.parametrize(
+    "key",
+    (
+        object(),
+        34.3,
+        10,
+    ),
+)
+def test_invalid_variable_keys_raise_type_error(key):
+    bundle = fluent.Bundle("en", [str(data_dir / "en.ftl")])
+
+    with pytest.raises(TypeError, match="Variable key not a str, got"):
+        bundle.get_translation("hello-user", variables={key: "Bob"})
+
+
 def test_large_python_integers_fail_sensibly():
     bundle = fluent.Bundle("en", [str(data_dir / "en.ftl")])
 

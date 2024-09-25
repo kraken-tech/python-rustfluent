@@ -7,6 +7,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+- Raise TypeError if variable key is not a string.
+
 ## [0.1.0a3] - 2024-09-25
 
 - Limited Fluent variable types to strings and integers.
