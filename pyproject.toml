@@ -21,14 +21,14 @@ classifiers = [
 ]
 # Do not manually edit the version, use `make version_{type}` instead.
 # This should match the version in the [tool.bumpversion] section.
-version = "0.1.0a4"
+version = "0.1.0a5"
 dependencies = []
 
 [project.urls]
 # See https://daniel.feldroy.com/posts/2023-08-pypi-project-urls-cheatsheet for
 # additional URLs that can be included here.
-repository = "https://github.com/octoenergy/python-rustfluent"
-changelog = "https://github.com/octoenergy/python-rustfluent/blob/main/CHANGELOG.md"
+repository = "https://github.com/kraken-tech/python-rustfluent/"
+changelog = "https://github.com/kraken-tech/python-rustfluent/blob/main/CHANGELOG.md"
 
 [project.optional-dependencies]
 dev = [
@@ -133,7 +133,7 @@ filterwarnings = "error"
 [tool.bumpversion]
 # Do not manually edit the version, use `make version_{type}` instead.
 # This should match the version in the [project] section.
-current_version = "0.1.0a4"
+current_version = "0.1.0a5"
 parse = "(?P<major>\\d+)\\.(?P<minor>\\d+)\\.(?P<patch>\\d+)"
 serialize = ["{major}.{minor}.{patch}"]
 search = "{current_version}"

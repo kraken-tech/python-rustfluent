@@ -84,15 +84,18 @@ bundle = rustfluent.Bundle(
 >>> bundle.get_translation(identifier="hello-world")
 "Hello, world!"
 >>> bundle.get_translation(identifier="hello-user", variables={"user": "Bob"})
+"Hello, \u2068Bob\u2069!"
+>>> bundle.get_translation(identifier="hello-user", variables={"user": "Bob"}, use_isolating=False)
 "Hello, Bob!"
 ```
 
 #### Parameters
 
-| Name         | Type                         | Description                            |
-|--------------|------------------------------|----------------------------------------|
-| `identifier` | `str`                        | The identifier for the Fluent message. |
-| `variables`  | `dict[str, str | int ]`, optional                  | Any [variables](https://projectfluent.org/fluent/guide/variables.html) to be passed to the Fluent message. |
+| Name                 | Type             | Description                                                                                                                                                               |
+|----------------------|------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `identifier`         | `str`            | The identifier for the Fluent message.                                                                                                                                    |
+| `variables`          | `dict[str, str   | int ]`, optional                                                                                                                                                          | Any [variables](https://projectfluent.org/fluent/guide/variables.html) to be passed to the Fluent message. |
+| `use_isolating` | `bool`, optional | Whether to insert Unicode Directionality Isolation Marks around placeables, to indicate that their direction may differ from the surrounding message. Defaults to `True`. |
 
 #### Return value
 

@@ -27,11 +27,23 @@ def test_en_basic_with_named_arguments():
     assert bundle.get_translation("hello-world") == "Hello World"
 
 
-def test_en_with_args():
+def test_en_with_variables():
     bundle = fluent.Bundle("en", [str(data_dir / "en.ftl")])
     assert (
         bundle.get_translation("hello-user", variables={"user": "Bob"})
         == f"Hello, {BIDI_OPEN}Bob{BIDI_CLOSE}"
+    )
+
+
+def test_en_with_variables_use_isolating_off():
+    bundle = fluent.Bundle("en", [str(data_dir / "en.ftl")])
+    assert (
+        bundle.get_translation(
+            "hello-user",
+            variables={"user": "Bob"},
+            use_isolating=False,
+        )
+        == "Hello, Bob"
     )
 
 
