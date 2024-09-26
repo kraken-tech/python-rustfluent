@@ -7,6 +7,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.1.0a5] - 2024-09-26
+
 - Add use_isolating flag.
 
 ## [0.1.0a4] - 2024-09-25
