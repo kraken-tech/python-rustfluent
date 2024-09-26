@@ -27,8 +27,8 @@ dependencies = []
 [project.urls]
 # See https://daniel.feldroy.com/posts/2023-08-pypi-project-urls-cheatsheet for
 # additional URLs that can be included here.
-repository = "https://github.com/octoenergy/python-rustfluent"
-changelog = "https://github.com/octoenergy/python-rustfluent/blob/main/CHANGELOG.md"
+repository = "https://github.com/kraken-tech/python-rustfluent/"
+changelog = "https://github.com/kraken-tech/python-rustfluent/blob/main/CHANGELOG.md"
 
 [project.optional-dependencies]
 dev = [
