@@ -59,12 +59,15 @@ impl Bundle {
         Ok(Self { bundle })
     }
 
-    #[pyo3(signature = (identifier, variables=None))]
+    #[pyo3(signature = (identifier, variables=None, use_isolating=true))]
     pub fn get_translation(
-        &self,
+        &mut self,
         identifier: &str,
         variables: Option<&Bound<'_, PyDict>>,
+        use_isolating: bool,
     ) -> PyResult<String> {
+        self.bundle.set_use_isolating(use_isolating);
+
         let msg = match self.bundle.get_message(identifier) {
             Some(m) => m,
             None => return Err(PyValueError::new_err(format!("{} not found", identifier))),
@@ -120,6 +123,7 @@ impl Bundle {
                 }
             }
         }
+
         let value = self
             .bundle
             .format_pattern(pattern, Some(&args), &mut errors);
