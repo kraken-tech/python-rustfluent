@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import pathlib
 import re
+from datetime import datetime
 
 import pytest
 
@@ -52,6 +53,12 @@ def test_en_with_variables_use_isolating_off():
     (
         ("String", "hello-user", {"user": "Bob"}, f"Hello, {BIDI_OPEN}Bob{BIDI_CLOSE}"),
         ("Integer", "apples", {"numberOfApples": 10}, f"{BIDI_OPEN}10{BIDI_CLOSE} apples"),
+        (
+            "Naive datetime",
+            "datetime-message",
+            {"datetime": datetime(2020, 1, 5)},
+            f"Datetime: {BIDI_OPEN}Jan 5, 2020{BIDI_CLOSE}.",
+        ),
     ),
 )
 def test_variables_of_different_types(description, identifier, variables, expected):

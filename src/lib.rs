@@ -1,9 +1,10 @@
+use chrono::{DateTime, Local, NaiveDate, Utc};
 use fluent::FluentArgs;
 use fluent_bundle::concurrent::FluentBundle;
 use fluent_bundle::FluentResource;
 use pyo3::exceptions::{PyFileNotFoundError, PyTypeError, PyValueError};
 use pyo3::prelude::*;
-use pyo3::types::{PyDict, PyInt, PyList, PyString};
+use pyo3::types::{PyDateTime, PyDict, PyInt, PyList, PyString};
 use std::fs;
 use unic_langid::LanguageIdentifier;
 
@@ -113,6 +114,21 @@ impl Bundle {
                             // Fall back to displaying the variable key as its value.
                             let fallback_value = key.clone();
                             args.set(key, fallback_value);
+                        }
+                    }
+                } else if python_value.is_instance_of::<PyDateTime>() {
+                    // Convert the Python datetime to a naive date.
+                    // This is not the best behaviour, but we're doing it to be the same as
+                    // Django FTL for now.
+                    match python_value.extract::<NaiveDate>() {
+                        Ok(chrono_date) => {
+                            args.set(key, "matched");
+                        }
+                        _ => {
+                            // Could not convert.
+                            // Fall back to displaying the variable key as its value.
+                            //let fallback_value = key.clone();
+                            args.set(key, "oops");
                         }
                     }
                 } else {
