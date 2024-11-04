@@ -1,9 +1,10 @@
+use chrono::NaiveDate;
 use fluent::FluentArgs;
 use fluent_bundle::concurrent::FluentBundle;
 use fluent_bundle::FluentResource;
 use pyo3::exceptions::{PyFileNotFoundError, PyTypeError, PyValueError};
 use pyo3::prelude::*;
-use pyo3::types::{PyDict, PyInt, PyList, PyString};
+use pyo3::types::{PyDate, PyDict, PyInt, PyList, PyString};
 use std::fs;
 use unic_langid::LanguageIdentifier;
 
@@ -110,6 +111,19 @@ impl Bundle {
                         }
                         _ => {
                             // The Python integer overflowed i32.
+                            // Fall back to displaying the variable key as its value.
+                            let fallback_value = key.clone();
+                            args.set(key, fallback_value);
+                        }
+                    }
+                } else if python_value.is_instance_of::<PyDate>() {
+                    // Display the Python date as YYYY-MM-DD.
+                    match python_value.extract::<NaiveDate>() {
+                        Ok(chrono_date) => {
+                            args.set(key, chrono_date.format("%Y-%m-%d").to_string());
+                        }
+                        _ => {
+                            // Could not convert.
                             // Fall back to displaying the variable key as its value.
                             let fallback_value = key.clone();
                             args.set(key, fallback_value);

@@ -91,11 +91,17 @@ bundle = rustfluent.Bundle(
 
 #### Parameters
 
-| Name                 | Type             | Description                                                                                                                                                               |
-|----------------------|------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `identifier`         | `str`            | The identifier for the Fluent message.                                                                                                                                    |
-| `variables`          | `dict[str, str   | int ]`, optional                                                                                                                                                          | Any [variables](https://projectfluent.org/fluent/guide/variables.html) to be passed to the Fluent message. |
-| `use_isolating` | `bool`, optional | Whether to insert Unicode Directionality Isolation Marks around placeables, to indicate that their direction may differ from the surrounding message. Defaults to `True`. |
+| Name            | Type                                               | Description                                                                                                                                                              |
+|-----------------|----------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `identifier`    | `str`                                              | The identifier for the Fluent message.                                                                                                                                   |
+| `variables`     | `dict[str, str \| int \| datetime.date]`, optional | Any [variables](https://projectfluent.org/fluent/guide/variables.html) to be passed to the Fluent message. |
+| `use_isolating` | `bool`, optional                                   | Whether to insert Unicode Directionality Isolation Marks around placeables, to indicate that their direction may differ from the surrounding message. Defaults to `True`. |
+
+#### Supported variable types:
+
+- `str`: Rendered as-is.
+- `int`: Must be in the range -2,147,483,648 to 2,147,483,647. Rendered as-is.
+- `datetime.date`: Rendered in the form YYYY-MM-DD.
 
 #### Return value
 
