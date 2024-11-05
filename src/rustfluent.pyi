@@ -1,4 +1,6 @@
-Variable = str | int
+from datetime import date
+
+Variable = str | int | date
 
 class Bundle:
     def __init__(self, language: str, ftl_filenames: list[str], strict: bool = False) -> None: ...
