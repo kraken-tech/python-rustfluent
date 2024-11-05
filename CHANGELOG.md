@@ -7,6 +7,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.1.0a6] - 2024-11-05
+
 - Render dates in YYYY-MM-DD format.
 
 ## [0.1.0a5] - 2024-09-26
