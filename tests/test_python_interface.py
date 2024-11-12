@@ -170,3 +170,7 @@ def test_raises_parser_error_on_file_that_contains_errors_in_strict_mode():
     filename = str(data_dir / "errors.ftl")
     with pytest.raises(fluent.ParserError, match=re.escape(f"Error when parsing {filename}.")):
         fluent.Bundle("fr", [filename], strict=True)
+
+
+def test_parser_error_str():
+    assert str(fluent.ParserError) == "<class 'rustfluent.ParserError'>"

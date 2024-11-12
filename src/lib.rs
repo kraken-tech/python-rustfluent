@@ -10,12 +10,12 @@ use unic_langid::LanguageIdentifier;
 
 use pyo3::create_exception;
 
-create_exception!(rustfluent, PyParserError, pyo3::exceptions::PyException);
+create_exception!(rustfluent, ParserError, pyo3::exceptions::PyException);
 
 #[pymodule]
 fn rustfluent(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<Bundle>()?;
-    m.add("ParserError", m.py().get_type_bound::<PyParserError>())?;
+    m.add("ParserError", m.py().get_type_bound::<ParserError>())?;
     Ok(())
 }
 
@@ -43,7 +43,7 @@ impl Bundle {
                 Ok(resource) => resource,
                 Err(error) => {
                     if strict {
-                        return Err(PyParserError::new_err(format!(
+                        return Err(ParserError::new_err(format!(
                             "Error when parsing {}.",
                             file_path
                         )));
