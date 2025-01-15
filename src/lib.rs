@@ -34,24 +34,21 @@ impl Bundle {
 
         for file_path in ftl_filenames.iter() {
             let path_string = file_path.to_string();
-            let contents = match fs::read_to_string(path_string) {
-                Ok(contents) => contents,
-                Err(_) => return Err(PyFileNotFoundError::new_err(file_path.to_string())),
-            };
+            let contents = fs::read_to_string(path_string)
+                .map_err(|_| PyFileNotFoundError::new_err(file_path.to_string()))?;
 
             let resource = match FluentResource::try_new(contents) {
                 Ok(resource) => resource,
+                Err(_) if strict => {
+                    return Err(ParserError::new_err(format!(
+                        "Error when parsing {}.",
+                        file_path
+                    )))
+                }
                 Err(error) => {
-                    if strict {
-                        return Err(ParserError::new_err(format!(
-                            "Error when parsing {}.",
-                            file_path
-                        )));
-                    } else {
-                        // The first element of the error is the parsed resource, minus any
-                        // invalid messages.
-                        error.0
-                    }
+                    // The first element of the error is the parsed resource, minus any
+                    // invalid messages.
+                    error.0
                 }
             };
             bundle.add_resource_overriding(resource);
@@ -69,21 +66,15 @@ impl Bundle {
     ) -> PyResult<String> {
         self.bundle.set_use_isolating(use_isolating);
 
-        let msg = match self.bundle.get_message(identifier) {
-            Some(m) => m,
-            None => return Err(PyValueError::new_err(format!("{} not found", identifier))),
-        };
+        let msg = self
+            .bundle
+            .get_message(identifier)
+            .ok_or_else(|| (PyValueError::new_err(format!("{identifier} not found"))))?;
 
         let mut errors = vec![];
-        let pattern = match msg.value() {
-            Some(m) => m,
-            None => {
-                return Err(PyValueError::new_err(format!(
-                    "{} - Message has no value.",
-                    identifier
-                )))
-            }
-        };
+        let pattern = msg.value().ok_or_else(|| {
+            PyValueError::new_err(format!("{identifier} - Message has no value.",))
+        })?;
 
         let mut args = FluentArgs::new();
 
