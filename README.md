@@ -1,4 +1,4 @@
-# rustfluent
+# `rustfluent`
 
 A Python interface to the Rust Fluent Library.
 
@@ -67,10 +67,10 @@ bundle = rustfluent.Bundle(
 
 #### Parameters
 
-| Name        | Type             | Description                                                                                                                                                              |
-|-------------|------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `language`  | `str`            | [Unicode Language Identifier](https://unicode.org/reports/tr35/tr35.html#Unicode_language_identifier) for the language.                                                  |
-| `ftl_files` | `list[str]`      | Full paths to the FTL files containing the translations. Entries in later files overwrite earlier ones.                                                                  |
+| Name        | Type             | Description                                                                                                                                                       |
+| ----------- | ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `language`  | `str`            | [Unicode Language Identifier](https://unicode.org/reports/tr35/tr35.html#Unicode_language_identifier) for the language.                                           |
+| `ftl_files` | `list[str]`      | Full paths to the FTL files containing the translations. Entries in later files overwrite earlier ones.                                                           |
 | `strict`    | `bool`, optional | In strict mode, a `ParserError` will be raised if there are any errors in the file. In non-strict mode, invalid Fluent messages will be excluded from the Bundle. |
 
 #### Raises
@@ -91,10 +91,10 @@ bundle = rustfluent.Bundle(
 
 #### Parameters
 
-| Name            | Type                                               | Description                                                                                                                                                              |
-|-----------------|----------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `identifier`    | `str`                                              | The identifier for the Fluent message.                                                                                                                                   |
-| `variables`     | `dict[str, str \| int \| datetime.date]`, optional | Any [variables](https://projectfluent.org/fluent/guide/variables.html) to be passed to the Fluent message. |
+| Name            | Type                                               | Description                                                                                                                                                               |
+| --------------- | -------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `identifier`    | `str`                                              | The identifier for the Fluent message.                                                                                                                                    |
+| `variables`     | `dict[str, str \| int \| datetime.date]`, optional | Any [variables](https://projectfluent.org/fluent/guide/variables.html) to be passed to the Fluent message.                                                                |
 | `use_isolating` | `bool`, optional                                   | Whether to insert Unicode Directionality Isolation Marks around placeables, to indicate that their direction may differ from the surrounding message. Defaults to `True`. |
 
 #### Supported variable types:
