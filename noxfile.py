@@ -20,6 +20,7 @@ nox.options.default_venv_backend = "uv"
     [
         nox.param("3.11", id="python=3.11"),
         nox.param("3.12", id="python=3.12"),
+        nox.param("3.13", id="python=3.13"),
     ],
 )
 def tests(session: nox.Session) -> None:
