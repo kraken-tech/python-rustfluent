@@ -8,6 +8,7 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ## [Unreleased]
 
 - Correct stringified name of ParserError exception.
+- Support Python 3.13.
 
 ## [0.1.0a6] - 2024-11-05
 
