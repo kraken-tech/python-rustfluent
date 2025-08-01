@@ -15,7 +15,7 @@ create_exception!(rustfluent, ParserError, pyo3::exceptions::PyException);
 #[pymodule]
 fn rustfluent(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<Bundle>()?;
-    m.add("ParserError", m.py().get_type_bound::<ParserError>())?;
+    m.add("ParserError", m.py().get_type::<ParserError>())?;
     Ok(())
 }
 
