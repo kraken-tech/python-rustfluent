@@ -5,8 +5,9 @@ use fluent_bundle::concurrent::FluentBundle;
 use miette::{LabeledSpan, miette};
 use pyo3::exceptions::{PyFileNotFoundError, PyTypeError, PyValueError};
 use pyo3::prelude::*;
-use pyo3::types::{PyDate, PyDict, PyInt, PyList, PyString};
+use pyo3::types::{PyDate, PyDict, PyInt, PyString};
 use std::fs;
+use std::path::PathBuf;
 use unic_langid::LanguageIdentifier;
 
 use pyo3::create_exception;
@@ -29,11 +30,7 @@ mod rustfluent {
     impl Bundle {
         #[new]
         #[pyo3(signature = (language, ftl_filenames, strict=false))]
-        fn new(
-            language: &str,
-            ftl_filenames: &'_ Bound<'_, PyList>,
-            strict: bool,
-        ) -> PyResult<Self> {
+        fn new(language: &str, ftl_filenames: Vec<PathBuf>, strict: bool) -> PyResult<Self> {
             let langid: LanguageIdentifier = match language.parse() {
                 Ok(langid) => langid,
                 Err(_) => {
@@ -45,9 +42,8 @@ mod rustfluent {
             let mut bundle = FluentBundle::new_concurrent(vec![langid]);
 
             for file_path in ftl_filenames.iter() {
-                let path_string = file_path.to_string();
-                let contents = fs::read_to_string(path_string)
-                    .map_err(|_| PyFileNotFoundError::new_err(file_path.to_string()))?;
+                let contents = fs::read_to_string(file_path)
+                    .map_err(|_| PyFileNotFoundError::new_err(file_path.clone()))?;
 
                 let resource = match FluentResource::try_new(contents) {
                     Ok(resource) => resource,
@@ -56,8 +52,12 @@ mod rustfluent {
                         for error in errors {
                             labels.push(LabeledSpan::at(error.pos, format!("{}", error.kind)))
                         }
-                        let error = miette!(labels = labels, "Error when parsing {file_path}",)
-                            .with_source_code(resource.source().to_string());
+                        let error = miette!(
+                            labels = labels,
+                            "Error when parsing {}",
+                            file_path.to_string_lossy()
+                        )
+                        .with_source_code(resource.source().to_string());
                         return Err(ParserError::new_err(format!("{error:?}")));
                     }
                     Err((resource, _errors)) => resource,

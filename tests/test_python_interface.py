@@ -15,6 +15,11 @@ BIDI_OPEN, BIDI_CLOSE = "\u2068", "\u2069"
 
 
 def test_en_basic():
+    bundle = fluent.Bundle("en", [data_dir / "en.ftl"])
+    assert bundle.get_translation("hello-world") == "Hello World"
+
+
+def test_en_basic_str_path():
     bundle = fluent.Bundle("en", [str(data_dir / "en.ftl")])
     assert bundle.get_translation("hello-world") == "Hello World"
 
@@ -22,13 +27,13 @@ def test_en_basic():
 def test_en_basic_with_named_arguments():
     bundle = fluent.Bundle(
         language="en",
-        ftl_filenames=[str(data_dir / "en.ftl")],
+        ftl_filenames=[data_dir / "en.ftl"],
     )
     assert bundle.get_translation("hello-world") == "Hello World"
 
 
 def test_en_with_variables():
-    bundle = fluent.Bundle("en", [str(data_dir / "en.ftl")])
+    bundle = fluent.Bundle("en", [data_dir / "en.ftl"])
     assert (
         bundle.get_translation("hello-user", variables={"user": "Bob"})
         == f"Hello, {BIDI_OPEN}Bob{BIDI_CLOSE}"
@@ -36,7 +41,7 @@ def test_en_with_variables():
 
 
 def test_en_with_variables_use_isolating_off():
-    bundle = fluent.Bundle("en", [str(data_dir / "en.ftl")])
+    bundle = fluent.Bundle("en", [data_dir / "en.ftl"])
     assert (
         bundle.get_translation(
             "hello-user",
@@ -61,7 +66,7 @@ def test_en_with_variables_use_isolating_off():
     ),
 )
 def test_variables_of_different_types(description, identifier, variables, expected):
-    bundle = fluent.Bundle("en", [str(data_dir / "en.ftl")])
+    bundle = fluent.Bundle("en", [data_dir / "en.ftl"])
 
     result = bundle.get_translation(identifier, variables=variables)
 
@@ -84,7 +89,7 @@ def test_invalid_language():
     ),
 )
 def test_invalid_variable_keys_raise_type_error(key):
-    bundle = fluent.Bundle("en", [str(data_dir / "en.ftl")])
+    bundle = fluent.Bundle("en", [data_dir / "en.ftl"])
 
     with pytest.raises(TypeError, match="Variable key not a str, got"):
         bundle.get_translation("hello-user", variables={key: "Bob"})
@@ -99,7 +104,7 @@ def test_invalid_variable_keys_raise_type_error(key):
     ),
 )
 def test_invalid_variable_values_use_key_instead(value):
-    bundle = fluent.Bundle("en", [str(data_dir / "en.ftl")])
+    bundle = fluent.Bundle("en", [data_dir / "en.ftl"])
 
     result = bundle.get_translation("hello-user", variables={"user": value})
 
@@ -107,12 +112,12 @@ def test_invalid_variable_values_use_key_instead(value):
 
 
 def test_fr_basic():
-    bundle = fluent.Bundle("fr", [str(data_dir / "fr.ftl")])
+    bundle = fluent.Bundle("fr", [data_dir / "fr.ftl"])
     assert bundle.get_translation("hello-world") == "Bonjour le monde!"
 
 
 def test_fr_with_args():
-    bundle = fluent.Bundle("fr", [str(data_dir / "fr.ftl")])
+    bundle = fluent.Bundle("fr", [data_dir / "fr.ftl"])
     assert (
         bundle.get_translation("hello-user", variables={"user": "Bob"})
         == f"Bonjour, {BIDI_OPEN}Bob{BIDI_CLOSE}!"
@@ -130,7 +135,7 @@ def test_fr_with_args():
     ),
 )
 def test_selector(number, expected):
-    bundle = fluent.Bundle("en", [str(data_dir / "en.ftl")])
+    bundle = fluent.Bundle("en", [data_dir / "en.ftl"])
 
     result = bundle.get_translation("with-selector", variables={"number": number})
 
@@ -140,7 +145,7 @@ def test_selector(number, expected):
 def test_new_overwrites_old():
     bundle = fluent.Bundle(
         "en",
-        [str(data_dir / "fr.ftl"), str(data_dir / "en_hello.ftl")],
+        [data_dir / "fr.ftl", data_dir / "en_hello.ftl"],
     )
     assert bundle.get_translation("hello-world") == "Hello World"
     assert (
@@ -150,14 +155,14 @@ def test_new_overwrites_old():
 
 
 def test_id_not_found():
-    bundle = fluent.Bundle("fr", [str(data_dir / "fr.ftl")])
+    bundle = fluent.Bundle("fr", [data_dir / "fr.ftl"])
     with pytest.raises(ValueError):
         bundle.get_translation("missing", variables={"user": "Bob"})
 
 
 def test_file_not_found():
     with pytest.raises(FileNotFoundError):
-        fluent.Bundle("fr", [str(data_dir / "none.ftl")])
+        fluent.Bundle("fr", [data_dir / "none.ftl"])
 
 
 @pytest.mark.parametrize("pass_strict_argument_explicitly", (True, False))
@@ -166,14 +171,14 @@ def test_parses_other_parts_of_file_that_contains_errors_in_non_strict_mode(
 ):
     kwargs = dict(strict=False) if pass_strict_argument_explicitly else {}
 
-    bundle = fluent.Bundle("fr", [str(data_dir / "errors.ftl")], **kwargs)
+    bundle = fluent.Bundle("fr", [data_dir / "errors.ftl"], **kwargs)
     translation = bundle.get_translation("valid-message")
 
     assert translation == "I'm valid."
 
 
 def test_raises_parser_error_on_file_that_contains_errors_in_strict_mode():
-    filename = str(data_dir / "errors.ftl")
+    filename = data_dir / "errors.ftl"
 
     with pytest.raises(fluent.ParserError) as exc_info:
         fluent.Bundle("fr", [filename], strict=True)

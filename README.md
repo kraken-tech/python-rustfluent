@@ -55,13 +55,15 @@ The Unicode characters around "Bob" in the above example are for
 A set of translations for a specific language.
 
 ```python
+import pathlib
+
 import rustfluent
 
 bundle = rustfluent.Bundle(
     language="en-US",
     ftl_files=[
         "/path/to/messages.ftl",
-        "/path/to/more/messages.ftl",
+        pathlib.Path("/path/to/more/messages.ftl"),
     ],
 )
 ```
@@ -71,7 +73,7 @@ bundle = rustfluent.Bundle(
 | Name        | Type             | Description                                                                                                                                                              |
 |-------------|------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `language`  | `str`            | [Unicode Language Identifier](https://unicode.org/reports/tr35/tr35.html#Unicode_language_identifier) for the language.                                                  |
-| `ftl_files` | `list[str]`      | Full paths to the FTL files containing the translations. Entries in later files overwrite earlier ones.                                                                  |
+| `ftl_files` | `list[str | pathlib.Path]` | Full paths to the FTL files containing the translations. Entries in later files overwrite earlier ones.                                                                  |
 | `strict`    | `bool`, optional | In strict mode, a `ParserError` will be raised if there are any errors in the file. In non-strict mode, invalid Fluent messages will be excluded from the Bundle. |
 
 #### Raises
