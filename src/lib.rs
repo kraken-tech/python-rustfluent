@@ -55,11 +55,7 @@ mod rustfluent {
                             "Error when parsing {file_path}."
                         )));
                     }
-                    Err(error) => {
-                        // The first element of the error is the parsed resource, minus any
-                        // invalid messages.
-                        error.0
-                    }
+                    Err((resource, _errors)) => resource,
                 };
                 bundle.add_resource_overriding(resource);
             }
