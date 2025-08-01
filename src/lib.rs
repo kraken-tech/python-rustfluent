@@ -102,31 +102,14 @@ mod rustfluent {
                     // raising a TypeError if not.
                     if python_value.is_instance_of::<PyString>() {
                         args.set(key, python_value.to_string());
-                    } else if python_value.is_instance_of::<PyInt>() {
-                        match python_value.extract::<i32>() {
-                            Ok(int_value) => {
-                                args.set(key, int_value);
-                            }
-                            _ => {
-                                // The Python integer overflowed i32.
-                                // Fall back to displaying the variable key as its value.
-                                let fallback_value = key.clone();
-                                args.set(key, fallback_value);
-                            }
-                        }
-                    } else if python_value.is_instance_of::<PyDate>() {
-                        // Display the Python date as YYYY-MM-DD.
-                        match python_value.extract::<NaiveDate>() {
-                            Ok(chrono_date) => {
-                                args.set(key, chrono_date.format("%Y-%m-%d").to_string());
-                            }
-                            _ => {
-                                // Could not convert.
-                                // Fall back to displaying the variable key as its value.
-                                let fallback_value = key.clone();
-                                args.set(key, fallback_value);
-                            }
-                        }
+                    } else if python_value.is_instance_of::<PyInt>()
+                        && let Ok(int_value) = python_value.extract::<i32>()
+                    {
+                        args.set(key, int_value);
+                    } else if python_value.is_instance_of::<PyDate>()
+                        && let Ok(chrono_date) = python_value.extract::<NaiveDate>()
+                    {
+                        args.set(key, chrono_date.format("%Y-%m-%d").to_string());
                     } else {
                         // The variable value was of an unsupported type.
                         // Fall back to displaying the variable key as its value.
