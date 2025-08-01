@@ -81,7 +81,6 @@ mod rustfluent {
                 .get_message(identifier)
                 .ok_or_else(|| (PyValueError::new_err(format!("{identifier} not found"))))?;
 
-            let mut errors = vec![];
             let pattern = msg.value().ok_or_else(|| {
                 PyValueError::new_err(format!("{identifier} - Message has no value.",))
             })?;
@@ -119,6 +118,7 @@ mod rustfluent {
                 }
             }
 
+            let mut errors = vec![];
             let value = self
                 .bundle
                 .format_pattern(pattern, Some(&args), &mut errors);
