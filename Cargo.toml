@@ -11,6 +11,6 @@ crate-type = ["cdylib"]
 [dependencies]
 pyo3 = { version = "0.25.1", features = ["chrono"] }
 fluent = "0.16.1"
-unic-langid = "0.9.5"
+unic-langid = "0.9.6"
 fluent-bundle = "0.15.3"
 chrono = "0.4.38"
