@@ -89,10 +89,9 @@ mod rustfluent {
             let mut args = FluentArgs::new();
 
             if let Some(variables) = variables {
-                for variable in variables {
+                for (python_key, python_value) in variables {
                     // Make sure the variable key is a Python string,
                     // raising a TypeError if not.
-                    let python_key = variable.0;
                     if !python_key.is_instance_of::<PyString>() {
                         return Err(PyTypeError::new_err(format!(
                             "Variable key not a str, got {python_key}."
@@ -101,7 +100,6 @@ mod rustfluent {
                     let key = python_key.to_string();
                     // Set the variable value as a string or integer,
                     // raising a TypeError if not.
-                    let python_value = variable.1;
                     if python_value.is_instance_of::<PyString>() {
                         args.set(key, python_value.to_string());
                     } else if python_value.is_instance_of::<PyInt>() {
