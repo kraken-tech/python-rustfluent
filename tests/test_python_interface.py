@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 import pathlib
-import re
 from datetime import datetime
 
 import pytest
@@ -175,8 +174,30 @@ def test_parses_other_parts_of_file_that_contains_errors_in_non_strict_mode(
 
 def test_raises_parser_error_on_file_that_contains_errors_in_strict_mode():
     filename = str(data_dir / "errors.ftl")
-    with pytest.raises(fluent.ParserError, match=re.escape(f"Error when parsing {filename}.")):
+
+    with pytest.raises(fluent.ParserError) as exc_info:
         fluent.Bundle("fr", [filename], strict=True)
+
+    message = str(exc_info.value)
+
+    # Recombine first line if it was too long
+    lines = message.split("\n")
+    if lines[1].endswith(".ftl"):
+        lines = [(lines[0] + lines[1]).replace("  │ ", ""), *lines[2:]]
+    message = "\n".join(lines)
+    # End recombination
+
+    expected = f"""\
+  × Error when parsing {filename}
+   ╭─[1:16]
+ 1 │ invalid-message
+   ·                ┬
+   ·                ╰── Expected a token starting with "="
+ 2 │ 
+ 3 │ valid-message = I'm valid.
+   ╰────
+"""
+    assert message == expected
 
 
 def test_parser_error_str():

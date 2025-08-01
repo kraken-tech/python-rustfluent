@@ -7,6 +7,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+- Annotate `ftl` file source code when reporting parse errors to allow ergonomic debugging.
+
 ## [0.1.0a7] - 2025-01-29
 
 - Correct stringified name of ParserError exception.

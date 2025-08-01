@@ -2,6 +2,7 @@ use chrono::NaiveDate;
 use fluent::FluentArgs;
 use fluent_bundle::FluentResource;
 use fluent_bundle::concurrent::FluentBundle;
+use miette::{LabeledSpan, miette};
 use pyo3::exceptions::{PyFileNotFoundError, PyTypeError, PyValueError};
 use pyo3::prelude::*;
 use pyo3::types::{PyDate, PyDict, PyInt, PyList, PyString};
@@ -50,10 +51,14 @@ mod rustfluent {
 
                 let resource = match FluentResource::try_new(contents) {
                     Ok(resource) => resource,
-                    Err(_) if strict => {
-                        return Err(ParserError::new_err(format!(
-                            "Error when parsing {file_path}."
-                        )));
+                    Err((resource, errors)) if strict => {
+                        let mut labels = Vec::with_capacity(errors.len());
+                        for error in errors {
+                            labels.push(LabeledSpan::at(error.pos, format!("{}", error.kind)))
+                        }
+                        let error = miette!(labels = labels, "Error when parsing {file_path}",)
+                            .with_source_code(resource.source().to_string());
+                        return Err(ParserError::new_err(format!("{error:?}")));
                     }
                     Err((resource, _errors)) => resource,
                 };
