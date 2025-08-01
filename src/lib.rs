@@ -33,7 +33,14 @@ mod rustfluent {
             ftl_filenames: &'_ Bound<'_, PyList>,
             strict: bool,
         ) -> PyResult<Self> {
-            let langid: LanguageIdentifier = language.parse().expect("Parsing failed");
+            let langid: LanguageIdentifier = match language.parse() {
+                Ok(langid) => langid,
+                Err(_) => {
+                    return Err(PyValueError::new_err(format!(
+                        "Invalid language: '{language}'"
+                    )));
+                }
+            };
             let mut bundle = FluentBundle::new_concurrent(vec![langid]);
 
             for file_path in ftl_filenames.iter() {

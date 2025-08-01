@@ -69,6 +69,13 @@ def test_variables_of_different_types(description, identifier, variables, expect
     assert result == expected
 
 
+def test_invalid_language():
+    with pytest.raises(ValueError) as exc_info:
+        fluent.Bundle("$", [])
+
+    assert str(exc_info.value) == "Invalid language: '$'"
+
+
 @pytest.mark.parametrize(
     "key",
     (
