@@ -8,6 +8,7 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ## [Unreleased]
 
 - Annotate `ftl` file source code when reporting parse errors to allow ergonomic debugging.
+- Support passing `pathlib.Path` in `ftl_filenames` (in addition to `str`) when creating a `Bundle`. This allows using non-unicode paths on unix systems.
 
 ## [0.1.0a7] - 2025-01-29
 
