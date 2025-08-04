@@ -1,7 +1,7 @@
 use chrono::NaiveDate;
 use fluent::FluentArgs;
-use fluent_bundle::concurrent::FluentBundle;
 use fluent_bundle::FluentResource;
+use fluent_bundle::concurrent::FluentBundle;
 use pyo3::exceptions::{PyFileNotFoundError, PyTypeError, PyValueError};
 use pyo3::prelude::*;
 use pyo3::types::{PyDate, PyDict, PyInt, PyList, PyString};
@@ -15,7 +15,7 @@ create_exception!(rustfluent, ParserError, pyo3::exceptions::PyException);
 #[pymodule]
 fn rustfluent(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<Bundle>()?;
-    m.add("ParserError", m.py().get_type_bound::<ParserError>())?;
+    m.add("ParserError", m.py().get_type::<ParserError>())?;
     Ok(())
 }
 
@@ -41,9 +41,8 @@ impl Bundle {
                 Ok(resource) => resource,
                 Err(_) if strict => {
                     return Err(ParserError::new_err(format!(
-                        "Error when parsing {}.",
-                        file_path
-                    )))
+                        "Error when parsing {file_path}."
+                    )));
                 }
                 Err(error) => {
                     // The first element of the error is the parsed resource, minus any
@@ -85,8 +84,7 @@ impl Bundle {
                 let python_key = variable.0;
                 if !python_key.is_instance_of::<PyString>() {
                     return Err(PyTypeError::new_err(format!(
-                        "Variable key not a str, got {}.",
-                        python_key
+                        "Variable key not a str, got {python_key}."
                     )));
                 }
                 let key = python_key.to_string();
