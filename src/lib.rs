@@ -77,14 +77,29 @@ mod rustfluent {
         ) -> PyResult<String> {
             self.bundle.set_use_isolating(use_isolating);
 
-            let msg = self
-                .bundle
-                .get_message(identifier)
-                .ok_or_else(|| (PyValueError::new_err(format!("{identifier} not found"))))?;
+            let get_message = |id: &str| {
+                self.bundle
+                    .get_message(id)
+                    .ok_or_else(|| PyValueError::new_err(format!("{id} not found")))
+            };
 
-            let pattern = msg.value().ok_or_else(|| {
-                PyValueError::new_err(format!("{identifier} - Message has no value.",))
-            })?;
+            let pattern = match identifier.split_once('.') {
+                Some((message_id, attribute_id)) => get_message(message_id)?
+                    .get_attribute(attribute_id)
+                    .ok_or_else(|| {
+                        PyValueError::new_err(format!(
+                            "{identifier} - Attribute '{attribute_id}' not found on message '{message_id}'."
+                        ))
+                    })?
+                    .value(),
+                    // Note: attribute.value() returns &Pattern directly (not Option)
+                    // because attributes always have values, unlike messages
+                None => get_message(identifier)?
+                    .value()
+                    .ok_or_else(|| {
+                        PyValueError::new_err(format!("{identifier} - Message has no value."))
+                    })?
+            };
 
             let mut args = FluentArgs::new();
 

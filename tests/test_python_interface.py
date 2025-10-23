@@ -207,3 +207,84 @@ def test_raises_parser_error_on_file_that_contains_errors_in_strict_mode():
 
 def test_parser_error_str():
     assert str(fluent.ParserError) == "<class 'rustfluent.ParserError'>"
+
+
+# Attribute access tests
+
+
+def test_basic_attribute_access():
+    bundle = fluent.Bundle("en", [data_dir / "attributes.ftl"])
+    assert bundle.get_translation("welcome-message.title") == "Welcome to our site"
+
+
+def test_regular_message_still_works_with_attributes():
+    """Test that accessing the main message value still works when it has attributes."""
+    bundle = fluent.Bundle("en", [data_dir / "attributes.ftl"])
+    assert bundle.get_translation("welcome-message") == "Welcome!"
+
+
+def test_multiple_attributes_on_same_message():
+    bundle = fluent.Bundle("en", [data_dir / "attributes.ftl"])
+    assert bundle.get_translation("login-input.placeholder") == "email@example.com"
+    assert bundle.get_translation("login-input.aria-label") == "Login input value"
+    assert bundle.get_translation("login-input.title") == "Type your login email"
+
+
+def test_attribute_with_variables():
+    bundle = fluent.Bundle("en", [data_dir / "attributes.ftl"])
+    result = bundle.get_translation("greeting.formal", variables={"name": "Alice"})
+    assert result == f"Hello, {BIDI_OPEN}Alice{BIDI_CLOSE}"
+
+
+def test_attribute_with_variables_use_isolating_off():
+    bundle = fluent.Bundle("en", [data_dir / "attributes.ftl"])
+    result = bundle.get_translation(
+        "greeting.informal",
+        variables={"name": "Bob"},
+        use_isolating=False,
+    )
+    assert result == "Hi Bob!"
+
+
+def test_attribute_on_message_without_main_value():
+    bundle = fluent.Bundle("en", [data_dir / "attributes.ftl"])
+    assert bundle.get_translation("form-button.submit") == "Submit Form"
+    assert bundle.get_translation("form-button.cancel") == "Cancel"
+    assert bundle.get_translation("form-button.reset") == "Reset Form"
+
+
+def test_message_without_value_raises_error():
+    """Test that accessing a message without a value (only attributes) raises an error."""
+    bundle = fluent.Bundle("en", [data_dir / "attributes.ftl"])
+    with pytest.raises(ValueError, match="form-button - Message has no value"):
+        bundle.get_translation("form-button")
+
+
+def test_missing_message_with_attribute_syntax_raises_error():
+    bundle = fluent.Bundle("en", [data_dir / "attributes.ftl"])
+    with pytest.raises(ValueError, match="nonexistent not found"):
+        bundle.get_translation("nonexistent.title")
+
+
+def test_missing_attribute_raises_error():
+    bundle = fluent.Bundle("en", [data_dir / "attributes.ftl"])
+    with pytest.raises(
+        ValueError,
+        match="welcome-message.nonexistent - Attribute 'nonexistent' not found on message 'welcome-message'",
+    ):
+        bundle.get_translation("welcome-message.nonexistent")
+
+
+@pytest.mark.parametrize(
+    "identifier,expected",
+    (
+        ("welcome-message", "Welcome!"),
+        ("welcome-message.title", "Welcome to our site"),
+        ("welcome-message.aria-label", "Welcome greeting"),
+        ("login-input", "Email"),
+        ("login-input.placeholder", "email@example.com"),
+    ),
+)
+def test_attribute_and_message_access_parameterized(identifier, expected):
+    bundle = fluent.Bundle("en", [data_dir / "attributes.ftl"])
+    assert bundle.get_translation(identifier) == expected
