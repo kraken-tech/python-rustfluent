@@ -13,5 +13,6 @@ pyo3 = { version = "0.25.1", features = ["chrono"] }
 fluent = "0.17.0"
 unic-langid = "0.9.6"
 fluent-bundle = "0.16.0"
+fluent-syntax = "0.12.0"
 chrono = "0.4.41"
 miette = { version = "7.6.0", features = ["fancy"] }
