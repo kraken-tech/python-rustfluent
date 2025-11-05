@@ -604,6 +604,91 @@ fn has_cycle(
     false
 }
 
+/// Helper function to create a comprehensive error with all parse and validation errors
+fn create_comprehensive_error(
+    parse_errors: &[ParseErrorDetail],
+    validation_errors: &[ValidationError],
+) -> PyErr {
+    Python::with_gil(|py| {
+        if !parse_errors.is_empty() {
+            // If there are parse errors, use ParserError as primary
+            // But attach validation errors too!
+
+            let first_file = parse_errors[0]
+                .filename
+                .as_ref()
+                .map(|s| s.as_str())
+                .unwrap_or("<string>");
+
+            // Try to read source for miette display
+            let source = std::fs::read_to_string(first_file).ok();
+
+            // Create miette error with labels
+            let mut labels = Vec::with_capacity(parse_errors.len());
+            for error in parse_errors {
+                labels.push(LabeledSpan::at(
+                    error.byte_start..error.byte_end,
+                    error.message.clone(),
+                ));
+            }
+
+            let miette_error = if let Some(source) = source {
+                miette!(
+                    labels = labels,
+                    "Found {} parse error(s) and {} validation error(s)",
+                    parse_errors.len(),
+                    validation_errors.len(),
+                )
+                .with_source_code(source)
+            } else {
+                miette!(
+                    "Found {} parse error(s) and {} validation error(s) in {}",
+                    parse_errors.len(),
+                    validation_errors.len(),
+                    first_file,
+                )
+            };
+
+            let err = ParserError::new_err(format!("{miette_error:?}"));
+
+            // Attach structured errors for programmatic access
+            if let Ok(exc) = err
+                .value(py)
+                .downcast::<pyo3::exceptions::PyBaseException>()
+            {
+                let _ = exc.setattr("parse_errors", parse_errors.to_vec());
+                let _ = exc.setattr("validation_errors", validation_errors.to_vec());
+                let _ = exc.setattr("error_count", parse_errors.len() + validation_errors.len());
+            }
+
+            err
+        } else {
+            // Only validation errors
+            let message = format!(
+                "Found {} validation error(s):\n{}",
+                validation_errors.len(),
+                validation_errors
+                    .iter()
+                    .map(|e| format!("  - {}", e.message))
+                    .collect::<Vec<_>>()
+                    .join("\n")
+            );
+
+            let err = PyValueError::new_err(message);
+
+            if let Ok(exc) = err
+                .value(py)
+                .downcast::<pyo3::exceptions::PyBaseException>()
+            {
+                let _ = exc.setattr("validation_errors", validation_errors.to_vec());
+                let _ = exc.setattr("error_count", validation_errors.len());
+            }
+
+            err
+        }
+    })
+}
+
 #[pymodule]
 mod rustfluent {
     use super::*;
