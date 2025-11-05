@@ -316,6 +316,214 @@ fn collect_expression_references(
     }
 }
 
+/// Helper struct to hold term information for validation
+#[derive(Debug, Clone)]
+struct TermInfo {
+    attributes: HashSet<String>,
+}
+
+/// Collect all term definitions from a resource
+fn collect_terms_from_resource(resource: &FluentResource) -> HashMap<String, TermInfo> {
+    use fluent_syntax::ast;
+    let mut terms = HashMap::new();
+
+    for entry in resource.entries() {
+        if let ast::Entry::Term(term) = entry {
+            let term_id = format!("-{}", term.id.name);
+            let attributes: HashSet<String> = term
+                .attributes
+                .iter()
+                .map(|attr| attr.id.name.to_string())
+                .collect();
+            terms.insert(term_id, TermInfo { attributes });
+        }
+    }
+
+    terms
+}
+
+/// Helper function to check all references in a resource against the bundle and available terms
+fn check_references(
+    resource: &FluentResource,
+    bundle: &FluentBundle<FluentResource>,
+    available_terms: &HashMap<String, TermInfo>,
+) -> Vec<ValidationError> {
+    use fluent_syntax::ast;
+    let mut errors = Vec::new();
+
+    for entry in resource.entries() {
+        match entry {
+            ast::Entry::Message(msg) => {
+                let msg_id = msg.id.name.to_string();
+                check_pattern_references(bundle, &msg.value, &msg_id, available_terms, &mut errors);
+                for attr in &msg.attributes {
+                    check_pattern_references(
+                        bundle,
+                        &Some(attr.value.clone()),
+                        &msg_id,
+                        available_terms,
+                        &mut errors,
+                    );
+                }
+            }
+            ast::Entry::Term(term) => {
+                let term_id = format!("-{}", term.id.name);
+                check_pattern_references(
+                    bundle,
+                    &Some(term.value.clone()),
+                    &term_id,
+                    available_terms,
+                    &mut errors,
+                );
+                for attr in &term.attributes {
+                    check_pattern_references(
+                        bundle,
+                        &Some(attr.value.clone()),
+                        &term_id,
+                        available_terms,
+                        &mut errors,
+                    );
+                }
+            }
+            _ => {}
+        }
+    }
+
+    errors
+}
+
+fn check_pattern_references(
+    bundle: &FluentBundle<FluentResource>,
+    pattern: &Option<fluent_syntax::ast::Pattern<&str>>,
+    current_msg_id: &str,
+    available_terms: &HashMap<String, TermInfo>,
+    errors: &mut Vec<ValidationError>,
+) {
+    use fluent_syntax::ast;
+
+    if let Some(pattern) = pattern {
+        for element in &pattern.elements {
+            if let ast::PatternElement::Placeable { expression } = element {
+                check_expression_references(
+                    bundle,
+                    expression,
+                    current_msg_id,
+                    available_terms,
+                    errors,
+                );
+            }
+        }
+    }
+}
+
+fn check_expression_references(
+    bundle: &FluentBundle<FluentResource>,
+    expression: &fluent_syntax::ast::Expression<&str>,
+    current_msg_id: &str,
+    available_terms: &HashMap<String, TermInfo>,
+    errors: &mut Vec<ValidationError>,
+) {
+    use fluent_syntax::ast;
+
+    match expression {
+        ast::Expression::Inline(inline) => {
+            match inline {
+                ast::InlineExpression::MessageReference { id, attribute } => {
+                    if !bundle.has_message(id.name) {
+                        errors.push(ValidationError {
+                            error_type: "UnknownMessage".to_string(),
+                            message: format!("Unknown message: {}", id.name),
+                            message_id: Some(current_msg_id.to_string()),
+                            reference: Some(id.name.to_string()),
+                        });
+                    } else if let Some(attr) = attribute {
+                        if let Some(msg) = bundle.get_message(id.name) {
+                            if msg.get_attribute(attr.name).is_none() {
+                                errors.push(ValidationError {
+                                    error_type: "UnknownAttribute".to_string(),
+                                    message: format!(
+                                        "Unknown attribute: {}.{}",
+                                        id.name, attr.name
+                                    ),
+                                    message_id: Some(current_msg_id.to_string()),
+                                    reference: Some(format!("{}.{}", id.name, attr.name)),
+                                });
+                            }
+                        }
+                    }
+                }
+                ast::InlineExpression::TermReference {
+                    id,
+                    attribute,
+                    arguments,
+                } => {
+                    let term_id = format!("-{}", id.name);
+
+                    // Validate that terms don't receive positional arguments
+                    // Per Fluent spec, positional arguments to terms are ignored, so we warn about them
+                    if let Some(args) = arguments {
+                        if !args.positional.is_empty() {
+                            errors.push(ValidationError {
+                                error_type: "IgnoredPositionalArgument".to_string(),
+                                message: format!(
+                                    "Positional arguments passed to term -{} are ignored. Use named arguments instead.",
+                                    id.name
+                                ),
+                                message_id: Some(current_msg_id.to_string()),
+                                reference: Some(term_id.clone()),
+                            });
+                        }
+                    }
+
+                    // Check against available_terms instead of bundle.has_message
+                    if !available_terms.contains_key(&term_id) {
+                        errors.push(ValidationError {
+                            error_type: "UnknownTerm".to_string(),
+                            message: format!("Unknown term: -{}", id.name),
+                            message_id: Some(current_msg_id.to_string()),
+                            reference: Some(term_id),
+                        });
+                    } else if let Some(attr) = attribute {
+                        // Check term attributes from available_terms instead of bundle.get_message
+                        if let Some(term_info) = available_terms.get(&term_id) {
+                            if !term_info.attributes.contains(attr.name) {
+                                errors.push(ValidationError {
+                                    error_type: "UnknownAttribute".to_string(),
+                                    message: format!(
+                                        "Unknown attribute on term: -{}.{}",
+                                        id.name, attr.name
+                                    ),
+                                    message_id: Some(current_msg_id.to_string()),
+                                    reference: Some(format!("-{}.{}", id.name, attr.name)),
+                                });
+                            }
+                        }
+                    }
+                }
+                _ => {}
+            }
+        }
+        ast::Expression::Select { selector, variants } => {
+            check_expression_references(
+                bundle,
+                &ast::Expression::Inline((*selector).clone()),
+                current_msg_id,
+                available_terms,
+                errors,
+            );
+            for variant in variants {
+                check_pattern_references(
+                    bundle,
+                    &Some(variant.value.clone()),
+                    current_msg_id,
+                    available_terms,
+                    errors,
+                );
+            }
+        }
+    }
+}
+
 #[pymodule]
 mod rustfluent {
     use super::*;
