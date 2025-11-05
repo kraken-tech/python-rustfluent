@@ -5,7 +5,7 @@ use fluent_bundle::concurrent::FluentBundle;
 use miette::{LabeledSpan, miette};
 use pyo3::exceptions::{PyFileNotFoundError, PyTypeError, PyValueError};
 use pyo3::prelude::*;
-use pyo3::types::{PyDate, PyDict, PyInt, PyString};
+use pyo3::types::{PyDate, PyDict, PyInt, PyList, PyString};
 use std::fs;
 use std::path::PathBuf;
 use unic_langid::LanguageIdentifier;
@@ -14,12 +14,217 @@ use pyo3::create_exception;
 
 create_exception!(rustfluent, ParserError, pyo3::exceptions::PyException);
 
+/// Helper function to convert byte position to line and column numbers
+fn byte_pos_to_line_col(source: &str, byte_pos: usize) -> (usize, usize) {
+    let relevant = &source[..byte_pos.min(source.len())];
+    let line = relevant.chars().filter(|&c| c == '\n').count() + 1;
+    let col = relevant.len() - relevant.rfind('\n').map_or(0, |pos| pos + 1) + 1;
+    (line, col)
+}
+
+/// Represents a single parsing error with detailed location information
+#[pyclass]
+#[derive(Clone)]
+struct ParseErrorDetail {
+    /// Human-readable error message
+    #[pyo3(get)]
+    message: String,
+
+    /// Line number where the error occurred (1-indexed)
+    #[pyo3(get)]
+    line: usize,
+
+    /// Column number where the error occurred (1-indexed)
+    #[pyo3(get)]
+    column: usize,
+
+    /// Byte position where the error starts (0-indexed)
+    #[pyo3(get)]
+    byte_start: usize,
+
+    /// Byte position where the error ends (0-indexed)
+    #[pyo3(get)]
+    byte_end: usize,
+
+    /// Optional file path where the error occurred
+    #[pyo3(get)]
+    filename: Option<String>,
+}
+
+#[pymethods]
+impl ParseErrorDetail {
+    fn __repr__(&self) -> String {
+        format!(
+            "ParseErrorDetail(message={:?}, line={}, column={}, byte_start={}, byte_end={})",
+            self.message, self.line, self.column, self.byte_start, self.byte_end
+        )
+    }
+
+    fn __str__(&self) -> String {
+        if let Some(ref filename) = self.filename {
+            format!(
+                "{}:{}:{}: {}",
+                filename, self.line, self.column, self.message
+            )
+        } else {
+            format!("{}:{}: {}", self.line, self.column, self.message)
+        }
+    }
+}
+
+impl ParseErrorDetail {
+    fn from_parser_error(
+        error: fluent_syntax::parser::ParserError,
+        source: &str,
+        filename: Option<String>,
+    ) -> Self {
+        let (line, column) = byte_pos_to_line_col(source, error.pos.start);
+        Self {
+            message: error.kind.to_string(),
+            line,
+            column,
+            byte_start: error.pos.start,
+            byte_end: error.pos.end,
+            filename,
+        }
+    }
+}
+
+/// Represents a validation error found during compile-time checking
+#[pyclass]
+#[derive(Clone)]
+struct ValidationError {
+    #[pyo3(get)]
+    error_type: String,
+    #[pyo3(get)]
+    message: String,
+    #[pyo3(get)]
+    message_id: Option<String>,
+    #[pyo3(get)]
+    reference: Option<String>,
+}
+
+#[pymethods]
+impl ValidationError {
+    fn __repr__(&self) -> String {
+        format!(
+            "ValidationError(type={:?}, message={:?}, message_id={:?})",
+            self.error_type, self.message, self.message_id
+        )
+    }
+
+    fn __str__(&self) -> String {
+        if let Some(ref msg_id) = self.message_id {
+            format!("{} in '{}': {}", self.error_type, msg_id, self.message)
+        } else {
+            format!("{}: {}", self.error_type, self.message)
+        }
+    }
+}
+
+/// Represents a format error during message formatting
+#[pyclass]
+#[derive(Clone)]
+struct FormatError {
+    #[pyo3(get)]
+    error_type: String,
+    #[pyo3(get)]
+    message: String,
+
+    // Enhanced context fields
+    #[pyo3(get)]
+    message_id: Option<String>, // Which message had the error
+
+    #[pyo3(get)]
+    variable_name: Option<String>, // Which variable (if applicable)
+
+    #[pyo3(get)]
+    expected_type: Option<String>, // What type was expected
+
+    #[pyo3(get)]
+    actual_type: Option<String>, // What type was provided
+}
+
+#[pymethods]
+impl FormatError {
+    fn __repr__(&self) -> String {
+        let mut parts = vec![
+            format!("error_type={:?}", self.error_type),
+            format!("message={:?}", self.message),
+        ];
+
+        if let Some(ref msg_id) = self.message_id {
+            parts.push(format!("message_id={:?}", msg_id));
+        }
+        if let Some(ref var) = self.variable_name {
+            parts.push(format!("variable_name={:?}", var));
+        }
+        if let Some(ref expected) = self.expected_type {
+            parts.push(format!("expected_type={:?}", expected));
+        }
+        if let Some(ref actual) = self.actual_type {
+            parts.push(format!("actual_type={:?}", actual));
+        }
+
+        format!("FormatError({})", parts.join(", "))
+    }
+
+    fn __str__(&self) -> String {
+        let mut result = format!("{}: {}", self.error_type, self.message);
+
+        if let Some(ref msg_id) = self.message_id {
+            result = format!("{} in '{}'", result, msg_id);
+        }
+        if let Some(ref var) = self.variable_name {
+            result = format!("{} (variable: {})", result, var);
+        }
+        if self.expected_type.is_some() && self.actual_type.is_some() {
+            result = format!(
+                "{} (expected {}, got {})",
+                result,
+                self.expected_type.as_ref().unwrap(),
+                self.actual_type.as_ref().unwrap()
+            );
+        }
+
+        result
+    }
+}
+
+impl FormatError {
+    fn from_fluent_error(error: &fluent_bundle::FluentError) -> Self {
+        use fluent_bundle::FluentError as BundleFluentError;
+        let error_type = match error {
+            BundleFluentError::Overriding { .. } => "Overriding",
+            BundleFluentError::ParserError(_) => "ParserError",
+            BundleFluentError::ResolverError(_) => "ResolverError",
+        };
+        Self {
+            error_type: error_type.to_string(),
+            message: error.to_string(),
+            message_id: None,
+            variable_name: None,
+            expected_type: None,
+            actual_type: None,
+        }
+    }
+}
+
 #[pymodule]
 mod rustfluent {
     use super::*;
 
     #[pymodule_export]
     use super::ParserError;
+
+    #[pymodule_export]
+    use super::ParseErrorDetail;
+
+    #[pymodule_export]
+    use super::ValidationError;
+
+    #[pymodule_export]
+    use super::FormatError;
 
     #[pyclass]
     struct Bundle {
