@@ -524,6 +524,86 @@ fn check_expression_references(
     }
 }
 
+/// Helper function to detect cycles in message references
+fn detect_cycles(resource: &FluentResource) -> Vec<ValidationError> {
+    use fluent_syntax::ast;
+    use std::collections::{HashMap, HashSet};
+
+    let mut errors = Vec::new();
+
+    // Build a map of message IDs to their referenced IDs
+    let mut message_refs: HashMap<String, Vec<String>> = HashMap::new();
+
+    for entry in resource.entries() {
+        match entry {
+            ast::Entry::Message(msg) => {
+                let msg_id = msg.id.name.to_string();
+                let mut refs = Vec::new();
+                collect_references(&msg.value, &mut refs);
+                for attr in &msg.attributes {
+                    collect_references(&Some(attr.value.clone()), &mut refs);
+                }
+                message_refs.insert(msg_id, refs);
+            }
+            ast::Entry::Term(term) => {
+                let term_id = format!("-{}", term.id.name);
+                let mut refs = Vec::new();
+                collect_references(&Some(term.value.clone()), &mut refs);
+                for attr in &term.attributes {
+                    collect_references(&Some(attr.value.clone()), &mut refs);
+                }
+                message_refs.insert(term_id, refs);
+            }
+            _ => {}
+        }
+    }
+
+    // Check each message for cycles using DFS
+    for (msg_id, _) in &message_refs {
+        let mut visited = HashSet::new();
+        let mut path = Vec::new();
+        if has_cycle(msg_id, &message_refs, &mut visited, &mut path) {
+            errors.push(ValidationError {
+                error_type: "CyclicReference".to_string(),
+                message: format!("Cyclic reference detected: {}", path.join(" -> ")),
+                message_id: Some(msg_id.clone()),
+                reference: None,
+            });
+        }
+    }
+
+    errors
+}
+
+fn has_cycle(
+    msg_id: &str,
+    message_refs: &HashMap<String, Vec<String>>,
+    visited: &mut HashSet<String>,
+    path: &mut Vec<String>,
+) -> bool {
+    if visited.contains(msg_id) {
+        // Found a cycle - add the current message to show where cycle completes
+        path.push(msg_id.to_string());
+        return true;
+    }
+
+    visited.insert(msg_id.to_string());
+    path.push(msg_id.to_string());
+
+    // Check all referenced messages
+    if let Some(refs) = message_refs.get(msg_id) {
+        for ref_id in refs {
+            if has_cycle(ref_id, message_refs, visited, path) {
+                return true;
+            }
+        }
+    }
+
+    path.pop();
+    visited.remove(msg_id);
+    false
+}
+
 #[pymodule]
 mod rustfluent {
     use super::*;
