@@ -490,3 +490,171 @@ def test_term_positional_arguments_validation_has_correct_context():
     assert bad_ref_error.message_id == "bad-reference"
     assert bad_ref_error.reference == "-brand-name"
     assert "named arguments" in bad_ref_error.message
+
+
+# ==============================================================================
+# Unknown Message Reference Tests
+# ==============================================================================
+
+
+def test_unknown_message_reference_validation_error():
+    """Test that referencing a non-existent message generates a validation error."""
+    bundle = fluent.Bundle("en", [data_dir / "broken_refs.ftl"])
+
+    # Should have validation errors for the unknown message reference
+    validation_errors = bundle.get_validation_errors()
+    assert len(validation_errors) >= 1
+
+    # Find the unknown message error
+    unknown_msg_errors = [e for e in validation_errors if e.error_type == "UnknownMessage"]
+    assert len(unknown_msg_errors) == 1
+
+    error = unknown_msg_errors[0]
+    assert error.error_type == "UnknownMessage"
+    assert "unknown-message" in error.message
+    assert error.message_id == "msg-with-unknown-ref"
+    assert error.reference == "unknown-message"
+
+
+def test_unknown_message_reference_strict_mode():
+    """Test that strict mode raises an error when unknown messages are referenced."""
+    with pytest.raises(ValueError) as exc_info:
+        fluent.Bundle("en", [data_dir / "broken_refs.ftl"], strict=True)
+
+    error = exc_info.value
+
+    # Should have validation errors
+    assert hasattr(error, "validation_errors")
+    assert len(error.validation_errors) >= 1
+
+    # Check that the error mentions the unknown message
+    error_messages = [e.message for e in error.validation_errors]
+    assert any("unknown-message" in msg for msg in error_messages)
+
+
+def test_unknown_message_reference_non_strict_mode():
+    """Test that non-strict mode allows unknown references but tracks them."""
+    # Should not raise in non-strict mode
+    bundle = fluent.Bundle("en", [data_dir / "broken_refs.ftl"], strict=False)
+
+    # But should still track the validation errors
+    validation_errors = bundle.get_validation_errors()
+    unknown_msg_errors = [e for e in validation_errors if e.error_type == "UnknownMessage"]
+    assert len(unknown_msg_errors) >= 1
+
+
+# ==============================================================================
+# Cyclic Reference Tests
+# ==============================================================================
+
+
+def test_cyclic_reference_validation_error():
+    """Test that cyclic message references are detected as validation errors."""
+    bundle = fluent.Bundle("en", [data_dir / "cycle.ftl"])
+
+    # Should have validation errors for cyclic references
+    validation_errors = bundle.get_validation_errors()
+    assert len(validation_errors) >= 1
+
+    # Find cyclic reference errors
+    cycle_errors = [e for e in validation_errors if e.error_type == "CyclicReference"]
+    assert len(cycle_errors) >= 1
+
+    # At least one error should mention the cycle
+    error = cycle_errors[0]
+    assert error.error_type == "CyclicReference"
+    assert "cycle" in error.message.lower() or "cyclic" in error.message.lower()
+    # Should mention both messages in the cycle
+    assert "msg-a" in error.message and "msg-b" in error.message
+
+
+def test_cyclic_reference_strict_mode():
+    """Test that strict mode raises an error when cycles are detected."""
+    with pytest.raises(ValueError) as exc_info:
+        fluent.Bundle("en", [data_dir / "cycle.ftl"], strict=True)
+
+    error = exc_info.value
+
+    # Should have validation errors
+    assert hasattr(error, "validation_errors")
+    assert len(error.validation_errors) >= 1
+
+    # Check that the error mentions cycles
+    error_messages = [e.message for e in error.validation_errors]
+    assert any("cycle" in msg.lower() or "cyclic" in msg.lower() for msg in error_messages)
+
+
+def test_cyclic_reference_non_strict_mode():
+    """Test that non-strict mode allows cycles but tracks them."""
+    # Should not raise in non-strict mode
+    bundle = fluent.Bundle("en", [data_dir / "cycle.ftl"], strict=False)
+
+    # But should still track the validation errors
+    validation_errors = bundle.get_validation_errors()
+    cycle_errors = [e for e in validation_errors if e.error_type == "CyclicReference"]
+    assert len(cycle_errors) >= 1
+
+
+# ==============================================================================
+# Duplicate Message ID Tests
+# ==============================================================================
+
+
+def test_duplicate_message_id_validation_error():
+    """Test that duplicate message IDs generate validation errors."""
+    bundle = fluent.Bundle("en", [data_dir / "duplicates.ftl"])
+
+    # Should have validation errors for duplicate message IDs
+    validation_errors = bundle.get_validation_errors()
+    assert len(validation_errors) >= 1
+
+    # Find duplicate message errors
+    duplicate_errors = [e for e in validation_errors if e.error_type == "DuplicateMessageId"]
+    assert len(duplicate_errors) >= 1
+
+    # At least one error should mention the duplicate
+    error = duplicate_errors[0]
+    assert error.error_type == "DuplicateMessageId"
+    assert "duplicate" in error.message.lower()
+    assert "hello" in error.message  # The duplicated message ID
+
+
+def test_duplicate_message_id_uses_last_definition():
+    """Test that when messages are duplicated, the last definition wins."""
+    bundle = fluent.Bundle("en", [data_dir / "duplicates.ftl"])
+
+    # Should have validation errors but still work
+    validation_errors = bundle.get_validation_errors()
+    duplicate_errors = [e for e in validation_errors if e.error_type == "DuplicateMessageId"]
+    assert len(duplicate_errors) >= 1
+
+    # The last definition should be used (per Fluent spec with add_resource_overriding)
+    result = bundle.get_translation("hello")
+    assert "duplicate" in result.lower() or "second" in result.lower()
+
+
+def test_duplicate_message_id_strict_mode():
+    """Test that strict mode raises an error when duplicates are detected."""
+    with pytest.raises(ValueError) as exc_info:
+        fluent.Bundle("en", [data_dir / "duplicates.ftl"], strict=True)
+
+    error = exc_info.value
+
+    # Should have validation errors
+    assert hasattr(error, "validation_errors")
+    assert len(error.validation_errors) >= 1
+
+    # Check that the error mentions duplicates
+    error_messages = [e.message for e in error.validation_errors]
+    assert any("duplicate" in msg.lower() for msg in error_messages)
+
+
+def test_duplicate_message_id_non_strict_mode():
+    """Test that non-strict mode allows duplicates but tracks them."""
+    # Should not raise in non-strict mode
+    bundle = fluent.Bundle("en", [data_dir / "duplicates.ftl"], strict=False)
+
+    # But should still track the validation errors
+    validation_errors = bundle.get_validation_errors()
+    duplicate_errors = [e for e in validation_errors if e.error_type == "DuplicateMessageId"]
+    assert len(duplicate_errors) >= 1
