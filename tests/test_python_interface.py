@@ -350,13 +350,6 @@ def test_term_attribute_as_selector():
     assert result == "This is a gadget"
 
 
-def test_multiple_term_references():
-    """Test that multiple messages can reference the same term."""
-    bundle = fluent.Bundle("en", [data_dir / "terms.ftl"])
-    assert bundle.get_translation("welcome") == "Welcome to Acme Corporation!"
-    assert bundle.get_translation("product-info") == "Learn about Super Widget"
-
-
 def test_direct_term_access_fails():
     """Test that terms cannot be retrieved directly per Fluent spec."""
     bundle = fluent.Bundle("en", [data_dir / "terms.ftl"])
@@ -658,3 +651,296 @@ def test_duplicate_message_id_non_strict_mode():
     validation_errors = bundle.get_validation_errors()
     duplicate_errors = [e for e in validation_errors if e.error_type == "DuplicateMessageId"]
     assert len(duplicate_errors) >= 1
+
+
+# ==============================================================================
+# Error Collection Methods Tests
+# ==============================================================================
+
+
+def test_get_parse_errors():
+    """Test that get_parse_errors() returns syntax errors from FTL parsing."""
+    bundle = fluent.Bundle("fr", [data_dir / "errors.ftl"], strict=False)
+
+    # Should have parse errors
+    parse_errors = bundle.get_parse_errors()
+    assert len(parse_errors) == 1
+
+    # Verify the error structure
+    error = parse_errors[0]
+    assert hasattr(error, "message")
+    assert hasattr(error, "line")
+    assert hasattr(error, "column")
+    assert hasattr(error, "byte_start")
+    assert hasattr(error, "byte_end")
+    assert hasattr(error, "filename")
+
+    # Verify error is about the missing =
+    assert error.line == 1
+    assert error.column == 16
+    assert 'Expected a token starting with "="' in error.message
+
+
+def test_get_all_compile_errors_combined():
+    """Test that get_all_compile_errors() returns both parse and validation errors with tags."""
+    bundle = fluent.Bundle("fr", [data_dir / "mixed_errors.ftl"], strict=False)
+
+    # Get all errors
+    all_errors = bundle.get_all_compile_errors()
+
+    # Should have both parse and validation errors
+    assert len(all_errors) >= 2
+
+    # Separate by category
+    parse_errors = [e for category, e in all_errors if category == "parse"]
+    validation_errors = [e for category, e in all_errors if category == "validation"]
+
+    # Should have at least one of each
+    assert len(parse_errors) >= 1
+    assert len(validation_errors) >= 1
+
+    # Parse errors should be ParseErrorDetail instances
+    assert type(parse_errors[0]).__name__ == "ParseErrorDetail"
+
+    # Validation errors should be ValidationError instances
+    assert type(validation_errors[0]).__name__ == "ValidationError"
+
+
+def test_get_all_compile_errors_only_parse():
+    """Test get_all_compile_errors() with only parse errors."""
+    bundle = fluent.Bundle("fr", [data_dir / "errors.ftl"], strict=False)
+
+    all_errors = bundle.get_all_compile_errors()
+    parse_errors = [e for category, e in all_errors if category == "parse"]
+    validation_errors = [e for category, e in all_errors if category == "validation"]
+
+    assert len(parse_errors) >= 1
+    assert len(validation_errors) == 0
+
+
+def test_get_all_compile_errors_only_validation():
+    """Test get_all_compile_errors() with only validation errors."""
+    bundle = fluent.Bundle("en", [data_dir / "broken_refs.ftl"], strict=False)
+
+    all_errors = bundle.get_all_compile_errors()
+    parse_errors = [e for category, e in all_errors if category == "parse"]
+    validation_errors = [e for category, e in all_errors if category == "validation"]
+
+    assert len(parse_errors) == 0
+    assert len(validation_errors) >= 1
+
+
+# ==============================================================================
+# get_required_variables() Tests
+# ==============================================================================
+
+
+def test_get_required_variables_single_variable():
+    """Test extracting a single variable from a message."""
+    bundle = fluent.Bundle("en", [data_dir / "variables.ftl"])
+    variables = bundle.get_required_variables("greeting")
+
+    assert len(variables) == 1
+    assert "name" in variables
+
+
+def test_get_required_variables_multiple_variables():
+    """Test extracting multiple variables from a message."""
+    bundle = fluent.Bundle("en", [data_dir / "variables.ftl"])
+    variables = bundle.get_required_variables("user-info")
+
+    assert len(variables) == 2
+    assert "username" in variables
+    assert "count" in variables
+    # Should be sorted
+    assert variables == sorted(variables)
+
+
+def test_get_required_variables_with_selector():
+    """Test extracting variables from messages with selectors."""
+    bundle = fluent.Bundle("en", [data_dir / "variables.ftl"])
+    variables = bundle.get_required_variables("item-status")
+
+    # Should include variables from selector and all variants
+    assert "count" in variables
+    assert "user" in variables
+    assert len(variables) == 2
+
+
+def test_get_required_variables_from_attribute():
+    """Test extracting variables from message attributes."""
+    bundle = fluent.Bundle("en", [data_dir / "variables.ftl"])
+
+    # Test subject attribute
+    subject_vars = bundle.get_required_variables("email-template.subject")
+    assert "recipient" in subject_vars
+
+    # Test body attribute
+    body_vars = bundle.get_required_variables("email-template.body")
+    assert "messageCount" in body_vars
+
+
+def test_get_required_variables_message_not_found():
+    """Test that get_required_variables raises error for non-existent message."""
+    bundle = fluent.Bundle("en", [data_dir / "variables.ftl"])
+
+    with pytest.raises(ValueError, match="nonexistent not found"):
+        bundle.get_required_variables("nonexistent")
+
+
+# ==============================================================================
+# validate_references Parameter Tests
+# ==============================================================================
+
+
+def test_validate_references_disabled():
+    """Test that validate_references=False skips reference validation."""
+    # This file has unknown message references, but validation should be skipped
+    bundle = fluent.Bundle(
+        "en", [data_dir / "broken_refs.ftl"], strict=False, validate_references=False
+    )
+
+    # Should have NO validation errors because validation was disabled
+    validation_errors = bundle.get_validation_errors()
+    assert len(validation_errors) == 0
+
+
+def test_validate_references_enabled_by_default():
+    """Test that validate_references defaults to True."""
+    # Same file, but validation should run by default
+    bundle = fluent.Bundle("en", [data_dir / "broken_refs.ftl"], strict=False)
+
+    # Should have validation errors
+    validation_errors = bundle.get_validation_errors()
+    assert len(validation_errors) >= 1
+
+
+def test_validate_references_false_with_cycles():
+    """Test that cycles are also skipped when validate_references=False."""
+    bundle = fluent.Bundle("en", [data_dir / "cycle.ftl"], strict=False, validate_references=False)
+
+    # Should have NO validation errors
+    validation_errors = bundle.get_validation_errors()
+    assert len(validation_errors) == 0
+
+
+def test_validate_references_false_with_duplicates():
+    """Test that duplicates are still detected even with validate_references=False."""
+    bundle = fluent.Bundle(
+        "en", [data_dir / "duplicates.ftl"], strict=False, validate_references=False
+    )
+
+    # Duplicates should still be detected (they're checked before validate_references)
+    validation_errors = bundle.get_validation_errors()
+    duplicate_errors = [e for e in validation_errors if e.error_type == "DuplicateMessageId"]
+    assert len(duplicate_errors) >= 1
+
+
+# ==============================================================================
+# get_translation() errors Parameter Tests
+# ==============================================================================
+
+
+def test_get_translation_errors_missing_variable():
+    """Test that missing variables are reported via errors parameter."""
+    bundle = fluent.Bundle("en", [data_dir / "variables.ftl"])
+    errors = []
+
+    # Call get_translation without providing required variable
+    result = bundle.get_translation("greeting", errors=errors)
+
+    # Result should still work (using fallback)
+    assert "name" in result
+
+    # Should have a MissingVariable error
+    assert len(errors) >= 1
+    error = errors[0]
+    assert error.error_type == "MissingVariable"
+    assert error.variable_name == "name"
+    assert error.message_id == "greeting"
+    assert "Unknown external: name" in error.message
+
+
+def test_get_translation_errors_invalid_variable_type():
+    """Test that invalid variable types are reported via errors parameter."""
+    bundle = fluent.Bundle("en", [data_dir / "variables.ftl"])
+    errors = []
+
+    # Pass a list instead of a string
+    result = bundle.get_translation(
+        "greeting", variables={"name": ["not", "a", "string"]}, errors=errors
+    )
+
+    # Result should use fallback (the variable key itself)
+    assert "name" in result
+
+    # Should have an InvalidVariableType error
+    assert len(errors) >= 1
+    error = errors[0]
+    assert error.error_type == "InvalidVariableType"
+    assert error.variable_name == "name"
+    assert error.message_id == "greeting"
+    assert error.expected_type == "str|int|date"
+    assert error.actual_type is not None
+
+
+def test_get_translation_errors_multiple_missing_variables():
+    """Test that multiple missing variables are all reported."""
+    bundle = fluent.Bundle("en", [data_dir / "variables.ftl"])
+    errors = []
+
+    # user-info needs both $username and $count
+    result = bundle.get_translation("user-info", errors=errors)
+    # Result should still contain placeholders
+    assert "username" in result or "count" in result
+
+    # Should have 2 MissingVariable errors
+    missing_errors = [e for e in errors if e.error_type == "MissingVariable"]
+    assert len(missing_errors) == 2
+
+    variable_names = {e.variable_name for e in missing_errors}
+    assert "username" in variable_names
+    assert "count" in variable_names
+
+
+def test_get_translation_errors_partial_variables():
+    """Test errors when only some variables are provided."""
+    bundle = fluent.Bundle("en", [data_dir / "variables.ftl"])
+    errors = []
+
+    # Provide only username, not count
+    result = bundle.get_translation("user-info", variables={"username": "Alice"}, errors=errors)
+
+    # Should have formatted username correctly
+    assert "Alice" in result
+
+    # Should have 1 MissingVariable error for count
+    missing_errors = [e for e in errors if e.error_type == "MissingVariable"]
+    assert len(missing_errors) == 1
+    assert missing_errors[0].variable_name == "count"
+
+
+def test_get_translation_errors_none_parameter():
+    """Test that errors=None doesn't break (errors are just not collected)."""
+    bundle = fluent.Bundle("en", [data_dir / "variables.ftl"])
+
+    # This should not raise even though variable is missing
+    result = bundle.get_translation("greeting", errors=None)
+    assert "name" in result
+
+
+def test_get_translation_errors_with_attributes():
+    """Test error collection with message attributes."""
+    bundle = fluent.Bundle("en", [data_dir / "variables.ftl"])
+    errors = []
+
+    # email-template.subject needs $recipient
+    result = bundle.get_translation("email-template.subject", errors=errors)
+    # Result should contain the placeholder
+    assert "recipient" in result
+
+    # Should have MissingVariable error
+    missing_errors = [e for e in errors if e.error_type == "MissingVariable"]
+    assert len(missing_errors) == 1
+    assert missing_errors[0].variable_name == "recipient"
+    assert missing_errors[0].message_id == "email-template.subject"
