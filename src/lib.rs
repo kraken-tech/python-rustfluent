@@ -6,6 +6,7 @@ use miette::{LabeledSpan, miette};
 use pyo3::exceptions::{PyFileNotFoundError, PyTypeError, PyValueError};
 use pyo3::prelude::*;
 use pyo3::types::{PyDate, PyDict, PyInt, PyList, PyString};
+use std::collections::{HashMap, HashSet};
 use std::fs;
 use std::path::PathBuf;
 use unic_langid::LanguageIdentifier;
@@ -206,6 +207,111 @@ impl FormatError {
             variable_name: None,
             expected_type: None,
             actual_type: None,
+        }
+    }
+}
+
+/// Extract all variable references from a pattern
+fn extract_variable_references(pattern: &fluent_syntax::ast::Pattern<&str>) -> HashSet<String> {
+    let mut vars = HashSet::new();
+    collect_vars_from_pattern(pattern, &mut vars);
+    vars
+}
+
+fn collect_vars_from_pattern(
+    pattern: &fluent_syntax::ast::Pattern<&str>,
+    vars: &mut HashSet<String>,
+) {
+    use fluent_syntax::ast;
+    for element in &pattern.elements {
+        if let ast::PatternElement::Placeable { expression } = element {
+            collect_vars_from_expression(expression, vars);
+        }
+    }
+}
+
+fn collect_vars_from_expression(
+    expr: &fluent_syntax::ast::Expression<&str>,
+    vars: &mut HashSet<String>,
+) {
+    use fluent_syntax::ast;
+    match expr {
+        ast::Expression::Inline(inline) => match inline {
+            ast::InlineExpression::VariableReference { id } => {
+                vars.insert(id.name.to_string());
+            }
+            ast::InlineExpression::FunctionReference { arguments, .. } => {
+                // Check positional args
+                for arg in &arguments.positional {
+                    collect_vars_from_expression(&ast::Expression::Inline(arg.clone()), vars);
+                }
+                // Check named args
+                for arg in &arguments.named {
+                    collect_vars_from_expression(&ast::Expression::Inline(arg.value.clone()), vars);
+                }
+            }
+            ast::InlineExpression::TermReference { arguments, .. } => {
+                if let Some(args) = arguments {
+                    // Check positional args
+                    for arg in &args.positional {
+                        collect_vars_from_expression(&ast::Expression::Inline(arg.clone()), vars);
+                    }
+                    // Check named args
+                    for arg in &args.named {
+                        collect_vars_from_expression(
+                            &ast::Expression::Inline(arg.value.clone()),
+                            vars,
+                        );
+                    }
+                }
+            }
+            _ => {}
+        },
+        ast::Expression::Select { selector, variants } => {
+            // Check selector expression
+            collect_vars_from_expression(&ast::Expression::Inline((*selector).clone()), vars);
+
+            // Check all variant values
+            for variant in variants {
+                collect_vars_from_pattern(&variant.value, vars);
+            }
+        }
+    }
+}
+
+fn collect_references(pattern: &Option<fluent_syntax::ast::Pattern<&str>>, refs: &mut Vec<String>) {
+    use fluent_syntax::ast;
+
+    if let Some(pattern) = pattern {
+        for element in &pattern.elements {
+            if let ast::PatternElement::Placeable { expression } = element {
+                collect_expression_references(expression, refs);
+            }
+        }
+    }
+}
+
+fn collect_expression_references(
+    expression: &fluent_syntax::ast::Expression<&str>,
+    refs: &mut Vec<String>,
+) {
+    use fluent_syntax::ast;
+
+    match expression {
+        ast::Expression::Inline(inline) => match inline {
+            ast::InlineExpression::MessageReference { id, .. } => {
+                refs.push(id.name.to_string());
+            }
+            ast::InlineExpression::TermReference { id, .. } => {
+                refs.push(format!("-{}", id.name));
+            }
+            _ => {}
+        },
+        ast::Expression::Select { selector, variants } => {
+            collect_expression_references(&ast::Expression::Inline((*selector).clone()), refs);
+            for variant in variants {
+                collect_references(&Some(variant.value.clone()), refs);
+            }
         }
     }
 }
