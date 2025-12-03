@@ -946,3 +946,111 @@ def test_get_translation_errors_with_attributes():
     assert len(missing_errors) == 1
     assert missing_errors[0].variable_name == "recipient"
     assert missing_errors[0].message_id == "email-template.subject"
+
+
+# ==============================================================================
+# RUNTIME RESOLVER ERROR TESTS (from_fluent_error)
+# ==============================================================================
+# These tests verify that runtime errors from fluent-bundle's format_pattern()
+# are correctly converted to FormatError via from_fluent_error(). These errors
+# have error_type="ResolverError" and occur when validation is disabled.
+
+
+def test_runtime_resolver_error_cyclic_reference():
+    """Test that cyclic references at runtime produce ResolverError."""
+    # Disable validation to allow the cycle to be detected at runtime
+    bundle = fluent.Bundle("en", [data_dir / "cycle.ftl"], strict=False, validate_references=False)
+    errors: list[fluent.FormatError] = []
+
+    # Format a message with a cyclic reference
+    result = bundle.get_translation("msg-a", errors=errors)
+
+    # Result should contain partial resolution
+    assert "Value:" in result
+
+    # Should have a ResolverError for the cycle
+    resolver_errors = [e for e in errors if e.error_type == "ResolverError"]
+    assert len(resolver_errors) >= 1
+
+    error = resolver_errors[0]
+    assert error.error_type == "ResolverError"
+    assert "Cyclical dependency" in error.message or "cyclic" in error.message.lower()
+
+
+def test_runtime_resolver_error_unknown_term():
+    """Test that unknown term references at runtime produce ResolverError."""
+    # Disable validation to allow unknown term to be detected at runtime
+    bundle = fluent.Bundle(
+        "en", [data_dir / "broken_terms.ftl"], strict=False, validate_references=False
+    )
+    errors: list[fluent.FormatError] = []
+
+    # Format a message with an unknown term reference
+    result = bundle.get_translation("broken-reference", errors=errors)
+
+    # Result should contain the unresolved term placeholder
+    assert "-nonexistent-term" in result
+
+    # Should have a ResolverError for the unknown term
+    resolver_errors = [e for e in errors if e.error_type == "ResolverError"]
+    assert len(resolver_errors) >= 1
+
+    error = resolver_errors[0]
+    assert error.error_type == "ResolverError"
+    assert "Unknown term" in error.message
+    assert "nonexistent-term" in error.message
+
+
+def test_runtime_resolver_error_unknown_message():
+    """Test that unknown message references at runtime produce ResolverError."""
+    # Disable validation to allow unknown message to be detected at runtime
+    bundle = fluent.Bundle(
+        "en", [data_dir / "broken_refs.ftl"], strict=False, validate_references=False
+    )
+    errors: list[fluent.FormatError] = []
+
+    # Format a message with an unknown message reference
+    result = bundle.get_translation(
+        "msg-with-unknown-ref", variables={"var": "test"}, errors=errors
+    )
+
+    # Result should contain the unresolved message placeholder
+    assert "unknown-message" in result
+
+    # Should have a ResolverError for the unknown message
+    resolver_errors = [e for e in errors if e.error_type == "ResolverError"]
+    assert len(resolver_errors) >= 1
+
+    error = resolver_errors[0]
+    assert error.error_type == "ResolverError"
+    assert "Unknown message" in error.message
+    assert "unknown-message" in error.message
+
+
+def test_runtime_resolver_error_fields():
+    """Test that ResolverError has expected FormatError fields."""
+    bundle = fluent.Bundle("en", [data_dir / "cycle.ftl"], strict=False, validate_references=False)
+    errors: list[fluent.FormatError] = []
+
+    bundle.get_translation("msg-a", errors=errors)
+
+    assert len(errors) >= 1
+    error = errors[0]
+
+    # Verify the FormatError structure
+    assert hasattr(error, "error_type")
+    assert hasattr(error, "message")
+    assert hasattr(error, "message_id")
+    assert hasattr(error, "variable_name")
+    assert hasattr(error, "expected_type")
+    assert hasattr(error, "actual_type")
+
+    # ResolverErrors from from_fluent_error set error_type and message,
+    # but leave other fields as None
+    assert error.error_type == "ResolverError"
+    assert error.message is not None and len(error.message) > 0
+    # These are None because from_fluent_error doesn't set them
+    assert error.message_id is None
+    assert error.variable_name is None
+    assert error.expected_type is None
+    assert error.actual_type is None
