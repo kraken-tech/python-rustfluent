@@ -464,6 +464,7 @@ dependencies = [
  "chrono",
  "fluent",
  "fluent-bundle",
+ "fluent-syntax",
  "miette",
  "pyo3",
  "unic-langid",
