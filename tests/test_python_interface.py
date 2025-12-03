@@ -844,7 +844,7 @@ def test_validate_references_false_with_duplicates():
 def test_get_translation_errors_missing_variable():
     """Test that missing variables are reported via errors parameter."""
     bundle = fluent.Bundle("en", [data_dir / "variables.ftl"])
-    errors = []
+    errors: list[fluent.FormatError] = []
 
     # Call get_translation without providing required variable
     result = bundle.get_translation("greeting", errors=errors)
@@ -864,11 +864,13 @@ def test_get_translation_errors_missing_variable():
 def test_get_translation_errors_invalid_variable_type():
     """Test that invalid variable types are reported via errors parameter."""
     bundle = fluent.Bundle("en", [data_dir / "variables.ftl"])
-    errors = []
+    errors: list[fluent.FormatError] = []
 
     # Pass a list instead of a string
     result = bundle.get_translation(
-        "greeting", variables={"name": ["not", "a", "string"]}, errors=errors
+        "greeting",
+        variables={"name": ["not", "a", "string"]},  # type: ignore[dict-item]
+        errors=errors,
     )
 
     # Result should use fallback (the variable key itself)
@@ -887,7 +889,7 @@ def test_get_translation_errors_invalid_variable_type():
 def test_get_translation_errors_multiple_missing_variables():
     """Test that multiple missing variables are all reported."""
     bundle = fluent.Bundle("en", [data_dir / "variables.ftl"])
-    errors = []
+    errors: list[fluent.FormatError] = []
 
     # user-info needs both $username and $count
     result = bundle.get_translation("user-info", errors=errors)
@@ -906,7 +908,7 @@ def test_get_translation_errors_multiple_missing_variables():
 def test_get_translation_errors_partial_variables():
     """Test errors when only some variables are provided."""
     bundle = fluent.Bundle("en", [data_dir / "variables.ftl"])
-    errors = []
+    errors: list[fluent.FormatError] = []
 
     # Provide only username, not count
     result = bundle.get_translation("user-info", variables={"username": "Alice"}, errors=errors)
@@ -932,7 +934,7 @@ def test_get_translation_errors_none_parameter():
 def test_get_translation_errors_with_attributes():
     """Test error collection with message attributes."""
     bundle = fluent.Bundle("en", [data_dir / "variables.ftl"])
-    errors = []
+    errors: list[fluent.FormatError] = []
 
     # email-template.subject needs $recipient
     result = bundle.get_translation("email-template.subject", errors=errors)
