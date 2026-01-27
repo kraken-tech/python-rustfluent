@@ -141,4 +141,79 @@ mod rustfluent {
             Ok(value.to_string())
         }
     }
+
+    #[cfg(test)]
+    mod tests {
+
+        use std::collections::HashMap;
+
+        use pyo3::{Python, types::IntoPyDict};
+
+        use super::rustfluent;
+
+        #[test]
+        fn bundle_new_success() {
+            vec![
+                ("en-US", vec![], false),
+                (
+                    "en-US",
+                    vec![std::path::PathBuf::from("tests/data/en.ftl")],
+                    false,
+                ),
+                (
+                    "en-US",
+                    vec![
+                        std::path::PathBuf::from("tests/data/en.ftl"),
+                        std::path::PathBuf::from("tests/data/en_hello.ftl"),
+                    ],
+                    false,
+                ),
+            ]
+            .into_iter()
+            .enumerate()
+            .for_each(|(case, (language, ftl_filenames, strict))| {
+                let result = rustfluent::Bundle::new(language, ftl_filenames, strict);
+                assert!(result.is_ok(), "case {case} failed");
+            });
+        }
+
+        #[test]
+        fn bundle_get_translation() {
+            let mut bundle = rustfluent::Bundle::new(
+                "en-US",
+                vec![std::path::PathBuf::from("tests/data/en.ftl")],
+                false,
+            )
+            .expect("valid fluent bundle");
+
+            let result = bundle.get_translation("hello-world", None, false);
+
+            assert!(result.is_ok());
+            assert_eq!(result.unwrap(), "Hello World");
+        }
+
+        #[test]
+        fn bundle_get_translation_with_ctx() {
+            let mut bundle = rustfluent::Bundle::new(
+                "en-US",
+                vec![std::path::PathBuf::from("tests/data/en.ftl")],
+                false,
+            )
+            .expect("valid fluent bundle");
+
+            Python::with_gil(|py| {
+                let mut ctx = HashMap::new();
+                ctx.insert("user", "John");
+
+                let result = bundle.get_translation(
+                    "hello-user",
+                    Some(&ctx.into_py_dict(py).unwrap()),
+                    false,
+                );
+
+                assert!(result.is_ok());
+                assert_eq!(result.unwrap(), "Hello, John");
+            });
+        }
+    }
 }
