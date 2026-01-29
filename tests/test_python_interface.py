@@ -15,25 +15,25 @@ BIDI_OPEN, BIDI_CLOSE = "\u2068", "\u2069"
 
 
 def test_en_basic():
-    bundle = fluent.Bundle("en", [data_dir / "en.ftl"])
+    bundle = fluent.Bundle("en", data_dir / "en.ftl")
     assert bundle.get_translation("hello-world") == "Hello World"
 
 
 def test_en_basic_str_path():
-    bundle = fluent.Bundle("en", [str(data_dir / "en.ftl")])
+    bundle = fluent.Bundle("en", str(data_dir / "en.ftl"))
     assert bundle.get_translation("hello-world") == "Hello World"
 
 
 def test_en_basic_with_named_arguments():
     bundle = fluent.Bundle(
         language="en",
-        ftl_filenames=[data_dir / "en.ftl"],
+        ftl_filename=data_dir / "en.ftl",
     )
     assert bundle.get_translation("hello-world") == "Hello World"
 
 
 def test_en_with_variables():
-    bundle = fluent.Bundle("en", [data_dir / "en.ftl"])
+    bundle = fluent.Bundle("en", data_dir / "en.ftl")
     assert (
         bundle.get_translation("hello-user", variables={"user": "Bob"})
         == f"Hello, {BIDI_OPEN}Bob{BIDI_CLOSE}"
@@ -41,7 +41,7 @@ def test_en_with_variables():
 
 
 def test_en_with_variables_use_isolating_off():
-    bundle = fluent.Bundle("en", [data_dir / "en.ftl"])
+    bundle = fluent.Bundle("en", data_dir / "en.ftl")
     assert (
         bundle.get_translation(
             "hello-user",
@@ -66,7 +66,7 @@ def test_en_with_variables_use_isolating_off():
     ),
 )
 def test_variables_of_different_types(description, identifier, variables, expected):
-    bundle = fluent.Bundle("en", [data_dir / "en.ftl"])
+    bundle = fluent.Bundle("en", data_dir / "en.ftl")
 
     result = bundle.get_translation(identifier, variables=variables)
 
@@ -75,7 +75,7 @@ def test_variables_of_different_types(description, identifier, variables, expect
 
 def test_invalid_language():
     with pytest.raises(ValueError) as exc_info:
-        fluent.Bundle("$", [])
+        fluent.Bundle("$", "")
 
     assert str(exc_info.value) == "Invalid language: '$'"
 
@@ -89,7 +89,7 @@ def test_invalid_language():
     ),
 )
 def test_invalid_variable_keys_raise_type_error(key):
-    bundle = fluent.Bundle("en", [data_dir / "en.ftl"])
+    bundle = fluent.Bundle("en", data_dir / "en.ftl")
 
     with pytest.raises(TypeError, match="Variable key not a str, got"):
         bundle.get_translation("hello-user", variables={key: "Bob"})
@@ -104,7 +104,7 @@ def test_invalid_variable_keys_raise_type_error(key):
     ),
 )
 def test_invalid_variable_values_use_key_instead(value):
-    bundle = fluent.Bundle("en", [data_dir / "en.ftl"])
+    bundle = fluent.Bundle("en", data_dir / "en.ftl")
 
     result = bundle.get_translation("hello-user", variables={"user": value})
 
@@ -112,12 +112,12 @@ def test_invalid_variable_values_use_key_instead(value):
 
 
 def test_fr_basic():
-    bundle = fluent.Bundle("fr", [data_dir / "fr.ftl"])
+    bundle = fluent.Bundle("fr", data_dir / "fr.ftl")
     assert bundle.get_translation("hello-world") == "Bonjour le monde!"
 
 
 def test_fr_with_args():
-    bundle = fluent.Bundle("fr", [data_dir / "fr.ftl"])
+    bundle = fluent.Bundle("fr", data_dir / "fr.ftl")
     assert (
         bundle.get_translation("hello-user", variables={"user": "Bob"})
         == f"Bonjour, {BIDI_OPEN}Bob{BIDI_CLOSE}!"
@@ -135,34 +135,22 @@ def test_fr_with_args():
     ),
 )
 def test_selector(number, expected):
-    bundle = fluent.Bundle("en", [data_dir / "en.ftl"])
+    bundle = fluent.Bundle("en", data_dir / "en.ftl")
 
     result = bundle.get_translation("with-selector", variables={"number": number})
 
     assert result == expected
 
 
-def test_new_overwrites_old():
-    bundle = fluent.Bundle(
-        "en",
-        [data_dir / "fr.ftl", data_dir / "en_hello.ftl"],
-    )
-    assert bundle.get_translation("hello-world") == "Hello World"
-    assert (
-        bundle.get_translation("hello-user", variables={"user": "Bob"})
-        == f"Bonjour, {BIDI_OPEN}Bob{BIDI_CLOSE}!"
-    )
-
-
 def test_id_not_found():
-    bundle = fluent.Bundle("fr", [data_dir / "fr.ftl"])
+    bundle = fluent.Bundle("fr", data_dir / "fr.ftl")
     with pytest.raises(ValueError):
         bundle.get_translation("missing", variables={"user": "Bob"})
 
 
 def test_file_not_found():
     with pytest.raises(FileNotFoundError):
-        fluent.Bundle("fr", [data_dir / "none.ftl"])
+        fluent.Bundle("fr", data_dir / "none.ftl")
 
 
 @pytest.mark.parametrize("pass_strict_argument_explicitly", (True, False))
@@ -171,7 +159,7 @@ def test_parses_other_parts_of_file_that_contains_errors_in_non_strict_mode(
 ):
     kwargs = dict(strict=False) if pass_strict_argument_explicitly else {}
 
-    bundle = fluent.Bundle("fr", [data_dir / "errors.ftl"], **kwargs)
+    bundle = fluent.Bundle("fr", data_dir / "errors.ftl", **kwargs)
     translation = bundle.get_translation("valid-message")
 
     assert translation == "I'm valid."
@@ -181,7 +169,7 @@ def test_raises_parser_error_on_file_that_contains_errors_in_strict_mode():
     filename = data_dir / "errors.ftl"
 
     with pytest.raises(fluent.ParserError) as exc_info:
-        fluent.Bundle("fr", [filename], strict=True)
+        fluent.Bundle("fr", filename, strict=True)
 
     message = str(exc_info.value)
 
@@ -213,31 +201,31 @@ def test_parser_error_str():
 
 
 def test_basic_attribute_access():
-    bundle = fluent.Bundle("en", [data_dir / "attributes.ftl"])
+    bundle = fluent.Bundle("en", data_dir / "attributes.ftl")
     assert bundle.get_translation("welcome-message.title") == "Welcome to our site"
 
 
 def test_regular_message_still_works_with_attributes():
     """Test that accessing the main message value still works when it has attributes."""
-    bundle = fluent.Bundle("en", [data_dir / "attributes.ftl"])
+    bundle = fluent.Bundle("en", data_dir / "attributes.ftl")
     assert bundle.get_translation("welcome-message") == "Welcome!"
 
 
 def test_multiple_attributes_on_same_message():
-    bundle = fluent.Bundle("en", [data_dir / "attributes.ftl"])
+    bundle = fluent.Bundle("en", data_dir / "attributes.ftl")
     assert bundle.get_translation("login-input.placeholder") == "email@example.com"
     assert bundle.get_translation("login-input.aria-label") == "Login input value"
     assert bundle.get_translation("login-input.title") == "Type your login email"
 
 
 def test_attribute_with_variables():
-    bundle = fluent.Bundle("en", [data_dir / "attributes.ftl"])
+    bundle = fluent.Bundle("en", data_dir / "attributes.ftl")
     result = bundle.get_translation("greeting.formal", variables={"name": "Alice"})
     assert result == f"Hello, {BIDI_OPEN}Alice{BIDI_CLOSE}"
 
 
 def test_attribute_with_variables_use_isolating_off():
-    bundle = fluent.Bundle("en", [data_dir / "attributes.ftl"])
+    bundle = fluent.Bundle("en", data_dir / "attributes.ftl")
     result = bundle.get_translation(
         "greeting.informal",
         variables={"name": "Bob"},
@@ -247,7 +235,7 @@ def test_attribute_with_variables_use_isolating_off():
 
 
 def test_attribute_on_message_without_main_value():
-    bundle = fluent.Bundle("en", [data_dir / "attributes.ftl"])
+    bundle = fluent.Bundle("en", data_dir / "attributes.ftl")
     assert bundle.get_translation("form-button.submit") == "Submit Form"
     assert bundle.get_translation("form-button.cancel") == "Cancel"
     assert bundle.get_translation("form-button.reset") == "Reset Form"
@@ -255,19 +243,19 @@ def test_attribute_on_message_without_main_value():
 
 def test_message_without_value_raises_error():
     """Test that accessing a message without a value (only attributes) raises an error."""
-    bundle = fluent.Bundle("en", [data_dir / "attributes.ftl"])
+    bundle = fluent.Bundle("en", data_dir / "attributes.ftl")
     with pytest.raises(ValueError, match="form-button - Message has no value"):
         bundle.get_translation("form-button")
 
 
 def test_missing_message_with_attribute_syntax_raises_error():
-    bundle = fluent.Bundle("en", [data_dir / "attributes.ftl"])
+    bundle = fluent.Bundle("en", data_dir / "attributes.ftl")
     with pytest.raises(ValueError, match="nonexistent not found"):
         bundle.get_translation("nonexistent.title")
 
 
 def test_missing_attribute_raises_error():
-    bundle = fluent.Bundle("en", [data_dir / "attributes.ftl"])
+    bundle = fluent.Bundle("en", data_dir / "attributes.ftl")
     with pytest.raises(
         ValueError,
         match="welcome-message.nonexistent - Attribute 'nonexistent' not found on message 'welcome-message'",
@@ -286,5 +274,5 @@ def test_missing_attribute_raises_error():
     ),
 )
 def test_attribute_and_message_access_parameterized(identifier, expected):
-    bundle = fluent.Bundle("en", [data_dir / "attributes.ftl"])
+    bundle = fluent.Bundle("en", data_dir / "attributes.ftl")
     assert bundle.get_translation(identifier) == expected

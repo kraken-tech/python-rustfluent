@@ -29,8 +29,8 @@ mod rustfluent {
     #[pymethods]
     impl Bundle {
         #[new]
-        #[pyo3(signature = (language, ftl_filenames, strict=false))]
-        fn new(language: &str, ftl_filenames: Vec<PathBuf>, strict: bool) -> PyResult<Self> {
+        #[pyo3(signature = (language, ftl_filename, strict=false))]
+        fn new(language: &str, ftl_filename: PathBuf, strict: bool) -> PyResult<Self> {
             let langid: LanguageIdentifier = match language.parse() {
                 Ok(langid) => langid,
                 Err(_) => {
@@ -41,29 +41,27 @@ mod rustfluent {
             };
             let mut bundle = FluentBundle::new_concurrent(vec![langid]);
 
-            for file_path in ftl_filenames.iter() {
-                let contents = fs::read_to_string(file_path)
-                    .map_err(|_| PyFileNotFoundError::new_err(file_path.clone()))?;
+            let contents = fs::read_to_string(&ftl_filename)
+                .map_err(|_| PyFileNotFoundError::new_err(ftl_filename.clone()))?;
 
-                let resource = match FluentResource::try_new(contents) {
-                    Ok(resource) => resource,
-                    Err((resource, errors)) if strict => {
-                        let mut labels = Vec::with_capacity(errors.len());
-                        for error in errors {
-                            labels.push(LabeledSpan::at(error.pos, format!("{}", error.kind)))
-                        }
-                        let error = miette!(
-                            labels = labels,
-                            "Error when parsing {}",
-                            file_path.to_string_lossy()
-                        )
-                        .with_source_code(resource.source().to_string());
-                        return Err(ParserError::new_err(format!("{error:?}")));
+            let resource = match FluentResource::try_new(contents) {
+                Ok(resource) => resource,
+                Err((resource, errors)) if strict => {
+                    let mut labels = Vec::with_capacity(errors.len());
+                    for error in errors {
+                        labels.push(LabeledSpan::at(error.pos, format!("{}", error.kind)))
                     }
-                    Err((resource, _errors)) => resource,
-                };
-                bundle.add_resource_overriding(resource);
-            }
+                    let error = miette!(
+                        labels = labels,
+                        "Error when parsing {}",
+                        ftl_filename.to_string_lossy()
+                    )
+                    .with_source_code(resource.source().to_string());
+                    return Err(ParserError::new_err(format!("{error:?}")));
+                }
+                Err((resource, _errors)) => resource,
+            };
+            bundle.add_resource_overriding(resource);
 
             Ok(Self { bundle })
         }

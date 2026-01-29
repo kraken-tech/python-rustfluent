@@ -29,14 +29,7 @@ pip install rustfluent
 import rustfluent
 
 # First load a bundle
-bundle = rustfluent.Bundle(
-    "en",
-    [
-        # Multiple FTL files can be specified. Entries in later
-        # files overwrite earlier ones.
-        "en.ftl",
-    ],
-)
+bundle = rustfluent.Bundle("en", "en.ftl")
 
 # Fetch a translation
 assert bundle.get_translation("hello-world") == "Hello World"
@@ -61,25 +54,22 @@ import rustfluent
 
 bundle = rustfluent.Bundle(
     language="en-US",
-    ftl_files=[
-        "/path/to/messages.ftl",
-        pathlib.Path("/path/to/more/messages.ftl"),
-    ],
+    ftl_filename="/path/to/messages.ftl",  # Also accepts pathlib.Path
 )
 ```
 
 #### Parameters
 
-| Name        | Type             | Description                                                                                                                                                              |
-|-------------|------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `language`  | `str`            | [Unicode Language Identifier](https://unicode.org/reports/tr35/tr35.html#Unicode_language_identifier) for the language.                                                  |
-| `ftl_files` | `list[str | pathlib.Path]` | Full paths to the FTL files containing the translations. Entries in later files overwrite earlier ones.                                                                  |
-| `strict`    | `bool`, optional | In strict mode, a `ParserError` will be raised if there are any errors in the file. In non-strict mode, invalid Fluent messages will be excluded from the Bundle. |
+| Name           | Type                    | Description                                                                                                                                                         |
+|----------------|-------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `language`     | `str`                   | [Unicode Language Identifier](https://unicode.org/reports/tr35/tr35.html#Unicode_language_identifier) for the language.                                            |
+| `ftl_filename` | `str \| pathlib.Path`   | Full path to the FTL file containing the translations.                                                                                                              |
+| `strict`       | `bool`, optional        | In strict mode, a `ParserError` will be raised if there are any errors in the file. In non-strict mode, invalid Fluent messages will be excluded from the Bundle.  |
 
 #### Raises
 
-- `FileNotFoundError` if any of the FTL files could not be found.
-- `rustfluent.ParserError` if any of the FTL files contain errors (strict mode only).
+- `FileNotFoundError` if the FTL file could not be found.
+- `rustfluent.ParserError` if the FTL file contains errors (strict mode only).
 
 ### `Bundle.get_translation`
 
