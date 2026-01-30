@@ -7,6 +7,7 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+- **Breaking:** Simplify `Bundle` constructor to accept a single file path instead of a list. Change `ftl_filenames` parameter to `ftl_filename`.
 - Add support for Fluent message attributes via dot notation (e.g., `bundle.get_translation("message.attribute")`).
 
 ## [0.1.0a8] - 2025-10-01
