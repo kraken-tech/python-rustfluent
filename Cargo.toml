@@ -9,7 +9,7 @@ name = "rustfluent"
 crate-type = ["cdylib"]
 
 [dependencies]
-pyo3 = { version = "0.25.1", features = ["chrono"] }
+pyo3 = { version = "0.28.0", features = ["chrono"] }
 fluent = "0.17.0"
 unic-langid = "0.9.6"
 fluent-bundle = "0.16.0"
