@@ -4,7 +4,9 @@ from pathlib import Path
 Variable = str | int | date
 
 class Bundle:
-    def __init__(self, language: str, ftl_filename: str | Path, strict: bool = False) -> None: ...
+    def __init__(
+        self, language: str, ftl_filenames: list[str | Path], strict: bool = False
+    ) -> None: ...
     def get_translation(
         self,
         identifier: str,
