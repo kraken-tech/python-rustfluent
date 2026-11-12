@@ -7,6 +7,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.1.0a9] - 2026-11-12
+
 - Officially support Python 3.14.
 - Add support for Fluent message attributes via dot notation (e.g., `bundle.get_translation("message.attribute")`).
 
